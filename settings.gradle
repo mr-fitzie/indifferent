@@ -1,0 +1,2 @@
+include ':mobile', ':wear', ':bypass'
+project(':bypass').projectDir = new File('bypass/platform/android/library')
