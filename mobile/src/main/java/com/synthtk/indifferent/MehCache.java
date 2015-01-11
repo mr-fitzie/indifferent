@@ -24,28 +24,35 @@ import java.util.HashMap;
  */
 public class MehCache {
     private static final String JSON_EXT = ".json";
-    private final String LOGTAG = this.getClass().getSimpleName();
-    Context mContext;
-    HashMap<Instant, Meh> mCache = new HashMap<>();
-    Gson mGson = new Gson();
-    DateTimeFormatter mFormatter = DateTimeFormat.forPattern("yyyyMMdd");
+    private static MehCache mInstance;
+    private Context mContext;
+    private HashMap<Instant, Meh> mCache = new HashMap<>();
+    private Gson mGson = new Gson();
+    private DateTimeFormatter mFormatter = DateTimeFormat.forPattern("yyyyMMdd");
 
     public MehCache(Context context) {
         mContext = context;
     }
 
+    public static synchronized MehCache getInstance(Context context) {
+        if (mInstance == null) {
+            mInstance = new MehCache(context);
+        }
+        return mInstance;
+    }
+
     public boolean put(Instant instant, Meh meh, boolean overwrite) {
         boolean success = false;
-        Log.d(LOGTAG, "put " + instant + " " + overwrite);
+        Log.d(MainActivity.LOGTAG, "put " + instant + " " + overwrite);
         if (!mCache.containsKey(instant) || mCache.containsKey(instant) && overwrite) {
-            String date = instant.toString(mFormatter);
+            String fileName = instant.toString(mFormatter) + JSON_EXT;
             mCache.put(instant, meh);
             try {
-                FileOutputStream fos = mContext.openFileOutput(date + JSON_EXT, Context.MODE_PRIVATE);
+                FileOutputStream fos = mContext.openFileOutput(fileName, Context.MODE_PRIVATE);
                 fos.write(mGson.toJson(meh).getBytes());
                 fos.close();
                 success = true;
-                Log.d(LOGTAG, "put success");
+                Log.d(MainActivity.LOGTAG, "put success " + fileName);
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -56,21 +63,23 @@ public class MehCache {
     public Meh get(Instant instant) {
         Meh meh = null;
         if (mCache.containsKey(instant)) {
-            Log.d(LOGTAG, "get Memory " + instant);
+            Log.d(MainActivity.LOGTAG, "get Memory " + instant);
             meh = mCache.get(instant);
         } else if (instant.isAfterNow()) {
             // So Sorry Cant peer into the future
-            Log.d(LOGTAG, "get Future " + instant);
+            Log.d(MainActivity.LOGTAG, "get Future " + instant);
         } else {
+            Log.d(MainActivity.LOGTAG, "get FileSystem " + instant);
+            String fileName = instant.toString(mFormatter) + JSON_EXT;
             JsonParser parser = new JsonParser();
             try {
-                String date = instant.toString(mFormatter);
-                File file = mContext.getFileStreamPath(date + JSON_EXT);
+                File file = mContext.getFileStreamPath(fileName);
                 JsonElement element = parser.parse(new FileReader(file));
                 meh = mGson.fromJson(element, Meh.class);
-                Log.d(LOGTAG, "get FileSystem " + instant);
+                mCache.put(instant, meh);
+                Log.d(MainActivity.LOGTAG, "get FileSystem FileFound " + fileName);
             } catch (FileNotFoundException e) {
-                e.printStackTrace();
+                Log.i(MainActivity.LOGTAG, "get FileSystem FileNotFound " + fileName);
             }
         }
         return meh;

@@ -1,5 +1,9 @@
 package com.synthtk.indifferent.api;
 
+import android.content.Context;
+
+import com.synthtk.indifferent.R;
+
 /**
  * Created by Chris on 1/8/2015.
  */
@@ -93,6 +97,27 @@ public class Deal {
 
     public void setPhotos(String[] photos) {
         this.photos = photos;
+    }
+
+    public String getPrices(Context context) {
+        int low = -1;
+        int high = -1;
+        for (Item item : items) {
+            int price = item.getPrice();
+            if (price < low || low == -1) {
+                low = price;
+            }
+            if (price > high || high == -1) {
+                high = price;
+            }
+        }
+        String price;
+        if (low != high) {
+            price = low + "-" + high;
+        } else {
+            price = String.valueOf(low);
+        }
+        return context.getString(R.string.deal_price, price);
     }
 
     public static class Item {

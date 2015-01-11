@@ -9,12 +9,18 @@
     <string name="navigation_drawer_close">Close navigation drawer</string>
     <string name="action_example">Example action</string>
     <string name="action_settings">Settings</string>
+    <string name="url">http://meh.com</string>
     <string name="api_url">https://api.meh.com/1/current.json?apikey=%1$s</string>
-    <string name="api_key">INSERT KEY HERE</string>
+    <string name="api_key">IbSXcEPjzgC0/2DNFDgwqWW1QmwcO8WR</string>
     <string name="loading">Loading…</string>
     <string name="error_something_went_wrong">Something Went Wrong</string>
     <string name="deal_title">Title</string>
     <string name="deal_features">Features</string>
     <string name="deal_specifications">Specifications</string>
+    <string name="deal_fukubukuro">Fukubukuro</string>
+    <string name="error_oops">Oops</string>
+    <string name="action_browser">Browser</string>
+    <string name="deal_price">$%1$s</string>
+    <string name="notify_summary">%1$s: %2$s</string>
 
 </resources>
