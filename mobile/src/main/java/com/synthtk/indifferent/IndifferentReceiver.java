@@ -16,6 +16,10 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.ImageLoader;
 import com.synthtk.indifferent.api.Meh;
+import com.synthtk.indifferent.util.Alarm;
+import com.synthtk.indifferent.util.GsonRequest;
+import com.synthtk.indifferent.util.MehCache;
+import com.synthtk.indifferent.util.VolleySingleton;
 
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
@@ -40,6 +44,7 @@ public class IndifferentReceiver extends BroadcastReceiver {
             Alarm.set(context);
             Log.e(MainActivity.LOGTAG, "BOOT COMPLETED");
         } else if (action.equals(INTENT_MEH)) {
+            Log.e(MainActivity.LOGTAG, "alarm triggered");
             final MehCache mehCache = MehCache.getInstance(context);
             final Instant today = DateTime.now(DateTimeZone.UTC).withTimeAtStartOfDay().toInstant();
             Meh meh = mehCache.get(today);
@@ -71,7 +76,6 @@ public class IndifferentReceiver extends BroadcastReceiver {
                 GsonRequest request = new GsonRequest(url, Meh.class, null, responseListener, responseErrorListener);
                 VolleySingleton.getInstance(context).addToRequestQueue(request);
             }
-            Log.e(MainActivity.LOGTAG, "alarm triggered");
         }
     }
 
@@ -118,8 +122,11 @@ public class IndifferentReceiver extends BroadcastReceiver {
         Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(meh.getDeal().getUrl()));
         PendingIntent browserPendingIntent = PendingIntent.getActivity(context, 0, browserIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 
+        String summary = context.getString(R.string.notify_summary, meh.getDeal().getItems()[0].getCondition(), meh.getDeal().getPrices(context));
+
         NotificationCompat.BigPictureStyle style = new NotificationCompat.BigPictureStyle()
-                .bigPicture(bitmap);
+                .bigPicture(bitmap)
+                .setSummaryText(summary);
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context)
                 .setCategory(NotificationCompat.CATEGORY_ALARM)
@@ -129,7 +136,7 @@ public class IndifferentReceiver extends BroadcastReceiver {
                 .setSmallIcon(R.drawable.ic_stat_meh)
                 .setLargeIcon(bitmap)
                 .setContentTitle(meh.getDeal().getTitle())
-                .setContentText(context.getString(R.string.notify_summary, meh.getDeal().getItems()[0].getCondition(), meh.getDeal().getPrices(context)))
+                .setContentText(summary)
                 .setAutoCancel(true)
                 .setOnlyAlertOnce(true)
                 .setContentIntent(appPendingIntent)

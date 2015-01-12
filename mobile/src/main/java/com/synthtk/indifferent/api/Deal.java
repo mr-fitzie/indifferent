@@ -113,11 +113,11 @@ public class Deal {
         }
         String price;
         if (low != high) {
-            price = low + "-" + high;
+            price = context.getString(R.string.deal_price_range, low, high);
         } else {
-            price = String.valueOf(low);
+            price = context.getString(R.string.deal_price, low);
         }
-        return context.getString(R.string.deal_price, price);
+        return price;
     }
 
     public static class Item {

@@ -3,10 +3,13 @@ package com.synthtk.indifferent;
 import android.app.Activity;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
+import android.graphics.drawable.GradientDrawable;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentStatePagerAdapter;
+import android.support.v4.view.ViewPager;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.ActionBarActivity;
@@ -23,6 +26,14 @@ import com.android.volley.VolleyError;
 import com.google.gson.Gson;
 import com.synthtk.indifferent.api.Deal;
 import com.synthtk.indifferent.api.Meh;
+import com.synthtk.indifferent.ui.ImageFragment;
+import com.synthtk.indifferent.ui.NavigationDrawerFragment;
+import com.synthtk.indifferent.util.Alarm;
+import com.synthtk.indifferent.util.GsonRequest;
+import com.synthtk.indifferent.util.Helper;
+import com.synthtk.indifferent.util.MehCache;
+import com.synthtk.indifferent.util.VolleySingleton;
+import com.viewpagerindicator.CirclePageIndicator;
 
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
@@ -51,6 +62,7 @@ public class MainActivity extends ActionBarActivity
     private Fragment mFragmentToLoad = null;
     private boolean mInitialized = false;
 
+
     @Override
     protected void onPause() {
         super.onPause();
@@ -71,16 +83,11 @@ public class MainActivity extends ActionBarActivity
 
         initialize();
 
-        mNavigationDrawerFragment = (NavigationDrawerFragment)
-                getSupportFragmentManager().findFragmentById(R.id.navigation_drawer);
+        mNavigationDrawerFragment = (NavigationDrawerFragment) getSupportFragmentManager().findFragmentById(R.id.navigation_drawer);
         mTitle = getTitle();
 
         // Set up the drawer.
-        mNavigationDrawerFragment.setUp(
-                R.id.navigation_drawer,
-                (DrawerLayout) findViewById(R.id.drawer_layout));
-
-
+        mNavigationDrawerFragment.setUp(R.id.navigation_drawer, (DrawerLayout) findViewById(R.id.drawer_layout));
     }
 
     @Override
@@ -156,7 +163,6 @@ public class MainActivity extends ActionBarActivity
         }
     }
 
-
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         if (!mNavigationDrawerFragment.isDrawerOpen()) {
@@ -199,23 +205,11 @@ public class MainActivity extends ActionBarActivity
         }
     }
 
-    private void setTheme(int color, boolean dark) {
-        mColor = color;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            float[] hsv = new float[3];
-            Color.colorToHSV(color, hsv);
-            if (dark) {
-                hsv[2] = 1.0f - 0.8f * (1.0f - hsv[2]);
-            } else {
-                hsv[2] = 0.2f + 0.8f * hsv[2];
-            }
-            mColorStatus = Color.HSVToColor(hsv);
-        }
-    }
-
     public static class DealFragment extends Fragment {
         public static final String ARG_INSTANT = "deal_instant";
         private static Meh mMeh;
+        private ViewPager mPager;
+        private ImagePagerAdapter mAdapter;
 
         public DealFragment() {
         }
@@ -226,22 +220,42 @@ public class MainActivity extends ActionBarActivity
             Bundle args = new Bundle();
             args.putLong(ARG_INSTANT, instant.getMillis());
             fragment.setArguments(args);
+
             return fragment;
         }
 
 
         @Override
-        public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                                 Bundle savedInstanceState) {
-            View rootView = inflater.inflate(R.layout.fragment_deal, container, false);
-            rootView.setBackgroundColor(Color.parseColor(mMeh.getDeal().getTheme().getBackgroundColor()));
-
+        public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
             Log.d(LOGTAG, "DealFragment.onCreateView");
+            Helper.cacheImages(getActivity(), mMeh);
+
+            View rootView = inflater.inflate(R.layout.fragment_deal, container, false);
+
+            // Set up ViewPager and backing adapter
+            mAdapter = new ImagePagerAdapter(getActivity().getSupportFragmentManager(), mMeh.getDeal().getPhotos().length);
+            mPager = (ViewPager) rootView.findViewById(R.id.pager);
+            mPager.setAdapter(mAdapter);
+            mPager.setPageMargin((int) getResources().getDimension(R.dimen.horizontal_page_margin));
+            mPager.setOffscreenPageLimit(2);
+
+            CirclePageIndicator circleIndicator = (CirclePageIndicator) rootView.findViewById(R.id.pager_indicator);
+            circleIndicator.setViewPager(mPager);
+
+            TextView price = (TextView) rootView.findViewById(R.id.price);
             TextView title = (TextView) rootView.findViewById(R.id.title);
             TextView features = (TextView) rootView.findViewById(R.id.features);
             TextView specifications = (TextView) rootView.findViewById(R.id.specifications);
 
             Deal deal = mMeh.getDeal();
+            Deal.Theme theme = deal.getTheme();
+
+            int accentColor = Color.parseColor(theme.getAccentColor());
+            price.setText(deal.getPrices(getActivity()));
+            price.setTextColor(Helper.getForegroundColor(getActivity(), accentColor));
+            GradientDrawable pill = (GradientDrawable) price.getBackground();
+            pill.setColor(accentColor);
+            pill.setStroke(getResources().getDimensionPixelSize(R.dimen.stroke_width), Helper.getHighlightColor(accentColor, theme.getForeground()));
             title.setText(deal.getTitle());
 
             Bypass bypass = new Bypass(getActivity());
@@ -250,6 +264,8 @@ public class MainActivity extends ActionBarActivity
 
             string = bypass.markdownToSpannable(deal.getSpecifications());
             specifications.setText(string);
+
+            rootView.setBackgroundColor(Color.parseColor(theme.getBackgroundColor()));
             return rootView;
         }
 
@@ -259,9 +275,27 @@ public class MainActivity extends ActionBarActivity
             MainActivity mainActivity = (MainActivity) activity;
             mainActivity.mTitle = mMeh.getDeal().getTitle();
             Deal.Theme theme = mMeh.getDeal().getTheme();
-            int color = Color.parseColor(theme.getAccentColor());
-            boolean dark = "dark".equals(theme.getForeground());
-            mainActivity.setTheme(color, dark);
+            mainActivity.mColor = Color.parseColor(theme.getAccentColor());
+            mainActivity.mColorStatus = Helper.getHighlightColor(mainActivity.mColor, theme.getForeground());
+        }
+
+        private class ImagePagerAdapter extends FragmentStatePagerAdapter {
+            private final int mSize;
+
+            public ImagePagerAdapter(FragmentManager fm, int size) {
+                super(fm);
+                mSize = size;
+            }
+
+            @Override
+            public int getCount() {
+                return mSize;
+            }
+
+            @Override
+            public Fragment getItem(int position) {
+                return ImageFragment.newInstance(mMeh.getDeal().getPhotos()[position]);
+            }
         }
     }
 
@@ -310,7 +344,8 @@ public class MainActivity extends ActionBarActivity
             mSectionNumber = getArguments().getInt(ARG_SECTION_NUMBER);
             MainActivity mainActivity = (MainActivity) activity;
             mainActivity.mTitle = getString(R.string.error_oops);
-            mainActivity.setTheme(getResources().getColor(R.color.primary_material_dark), false);
+            mainActivity.mColor = getResources().getColor(R.color.primary_material_dark);
+            mainActivity.mColorStatus = getResources().getColor(R.color.primary_dark_material_dark);
         }
     }
 }

@@ -21,6 +21,7 @@
     <string name="error_oops">Oops</string>
     <string name="action_browser">Browser</string>
     <string name="deal_price">$%1$s</string>
+    <string name="deal_price_range">$%1$s - $%2$s</string>
     <string name="notify_summary">%1$s: %2$s</string>
 
 </resources>

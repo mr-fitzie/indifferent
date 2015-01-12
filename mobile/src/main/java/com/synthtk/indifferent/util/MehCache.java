@@ -1,4 +1,4 @@
-package com.synthtk.indifferent;
+package com.synthtk.indifferent.util;
 
 import android.content.Context;
 import android.util.Log;
@@ -6,6 +6,7 @@ import android.util.Log;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
+import com.synthtk.indifferent.MainActivity;
 import com.synthtk.indifferent.api.Meh;
 
 import org.joda.time.Instant;

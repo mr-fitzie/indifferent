@@ -1,4 +1,4 @@
-package com.synthtk.indifferent;
+package com.synthtk.indifferent.util;
 
 import com.android.volley.AuthFailureError;
 import com.android.volley.NetworkResponse;
