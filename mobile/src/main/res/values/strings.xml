@@ -22,6 +22,27 @@
     <string name="action_browser">Browser</string>
     <string name="deal_price">$%1$s</string>
     <string name="deal_price_range">$%1$s - $%2$s</string>
+    <string name="deal_story">Story</string>
     <string name="notify_summary">%1$s: %2$s</string>
 
+    <string name="pref_alarm">Alarm / Notification</string>
+    <string name="pref_alarm_enable_title">Enable</string>
+    <string name="pref_alarm_enable_summary">Enable deal notification at midnight US/Eastern</string>
+    <string name="pref_alarm_retry_title">Retry Time</string>
+    <string name="pref_alarm_retry_summary">Number of minutes to retry checking for a deal: %1$s</string>
+    <string-array name="pref_alarm_retry">
+        <item>1 min</item>
+        <item>5 min</item>
+        <item>10 min</item>
+        <item>15 min</item>
+        <item>30 min</item>
+    </string-array>
+    <string-array name="pref_alarm_retry_values">
+        <item>1</item>
+        <item>5</item>
+        <item>10</item>
+        <item>15</item>
+        <item>30</item>
+    </string-array>
+    <string name="pref_alarm_test_title">Test Alarm Notification</string>
 </resources>

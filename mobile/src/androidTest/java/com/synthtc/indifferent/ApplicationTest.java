@@ -1,4 +1,4 @@
-package com.synthtk.indifferent;
+package com.synthtc.indifferent;
 
 import android.app.Application;
 import android.test.ApplicationTestCase;

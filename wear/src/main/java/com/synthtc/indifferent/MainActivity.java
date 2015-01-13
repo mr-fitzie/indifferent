@@ -1,4 +1,4 @@
-package com.synthtk.indifferent;
+package com.synthtc.indifferent;
 
 import android.app.Activity;
 import android.os.Bundle;

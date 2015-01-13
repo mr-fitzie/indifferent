@@ -1,4 +1,4 @@
-package com.synthtk.indifferent.api;
+package com.synthtc.indifferent.api;
 
 /**
  * Created by Chris on 1/8/2015.

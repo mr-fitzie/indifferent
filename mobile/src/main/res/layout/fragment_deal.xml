@@ -48,6 +48,19 @@
             android:text="@string/deal_features" />
 
         <TextView
+            android:id="@+id/story_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/deal_title"
+            android:textAppearance="@android:style/TextAppearance.Large" />
+
+        <TextView
+            android:id="@+id/story"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/deal_story" />
+
+        <TextView
             android:id="@+id/specifications"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"

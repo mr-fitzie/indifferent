@@ -1,4 +1,4 @@
-package com.synthtk.indifferent.util;
+package com.synthtc.indifferent.util;
 
 import android.app.AlarmManager;
 import android.app.PendingIntent;
@@ -6,8 +6,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
 
-import com.synthtk.indifferent.IndifferentReceiver;
-import com.synthtk.indifferent.MainActivity;
+import com.synthtc.indifferent.IndifferentReceiver;
+import com.synthtc.indifferent.MainActivity;
 
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;

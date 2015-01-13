@@ -1,4 +1,4 @@
-package com.synthtk.indifferent.util;
+package com.synthtc.indifferent.util;
 
 import android.content.Context;
 import android.graphics.Bitmap;

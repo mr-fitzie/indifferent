@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <PreferenceCategory
+        android:key="pref_alarm"
+        android:title="@string/pref_alarm">
+        <CheckBoxPreference
+            android:defaultValue="true"
+            android:key="pref_alarm_enable"
+            android:summary="@string/pref_alarm_enable_summary"
+            android:title="@string/pref_alarm_enable_title" />
+        <ListPreference
+            android:defaultValue="5"
+            android:entries="@array/pref_alarm_retry"
+            android:entryValues="@array/pref_alarm_retry_values"
+            android:key="pref_alarm_retry"
+            android:negativeButtonText="@null"
+            android:positiveButtonText="@null"
+            android:summary="@string/pref_alarm_retry_summary"
+            android:title="@string/pref_alarm_retry_title" />
+        <com.synthtc.indifferent.util.BroadcastPreference
+            android:key="pref_alarm_test"
+            android:title="@string/pref_alarm_test_title">
+            <intent android:action="com.synthtc.indifferent.MEH" />
+        </com.synthtc.indifferent.util.BroadcastPreference>
+    </PreferenceCategory>
+</PreferenceScreen>

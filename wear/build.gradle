@@ -6,7 +6,7 @@ android {
     buildToolsVersion projBuildToolsVersion
 
     defaultConfig {
-        applicationId "com.synthtk.indifferent"
+        applicationId "com.synthtc.indifferent"
         minSdkVersion projMinSdkVersion
         targetSdkVersion projTargetSdkVersion
         versionCode projVersionCode

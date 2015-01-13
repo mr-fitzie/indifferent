@@ -1,8 +1,8 @@
-package com.synthtk.indifferent.api;
+package com.synthtc.indifferent.api;
 
 import android.content.Context;
 
-import com.synthtk.indifferent.R;
+import com.synthtc.indifferent.R;
 
 /**
  * Created by Chris on 1/8/2015.
@@ -16,8 +16,17 @@ public class Deal {
     String soldOutAt;
     String[] photos;
     Item[] items;
+    Story story;
     Topic topic;
     Theme theme;
+
+    public Story getStory() {
+        return story;
+    }
+
+    public void setStory(Story story) {
+        this.story = story;
+    }
 
     public Theme getTheme() {
         return theme;
@@ -184,6 +193,14 @@ public class Deal {
     public static class Story {
         String title;
         String body;
+
+        public String getBody() {
+            return body;
+        }
+
+        public void setBody(String body) {
+            this.body = body;
+        }
 
         public String getTitle() {
             return title;
