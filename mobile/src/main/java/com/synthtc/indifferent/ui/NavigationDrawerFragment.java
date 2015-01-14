@@ -20,7 +20,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
-import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
 
@@ -33,6 +32,7 @@ import com.synthtc.indifferent.util.MehCache;
 import com.synthtc.indifferent.util.VolleySingleton;
 
 import org.joda.time.Instant;
+import org.joda.time.format.DateTimeFormat;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -111,6 +111,7 @@ public class NavigationDrawerFragment extends Fragment {
         MehCache mehCache = MehCache.getInstance(getActivity());
 
         mMehs = mehCache.getAll();
+        mMehs.add(null); //Settings
 
         mDrawerListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
@@ -125,13 +126,13 @@ public class NavigationDrawerFragment extends Fragment {
                 mMehs));
         mDrawerListView.setItemChecked(mCurrentSelectedPosition, true);
 
-        Button settings = (Button) rootView.findViewById(R.id.settings);
-        settings.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                selectItem(-1);
-            }
-        });
+//        Button settings = (Button) rootView.findViewById(R.id.settings);
+//        settings.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//                selectItem(-1);
+//            }
+//        });
         return rootView;
     }
 
@@ -346,19 +347,25 @@ public class NavigationDrawerFragment extends Fragment {
             }
 
             Meh meh = mObjects.get(position);
-            Instant instant = MehCache.getInstance(mContext).getInstant(meh);
-            Deal deal = meh.getDeal();
-            if (deal != null) {
-                holder.title.setText(deal.getTitle());
-                if (deal.getPhotos() != null && deal.getPhotos().length > 0) {
-                    holder.icon.setImageUrl(deal.getPhotos()[0], mImageLoader);
-                }
-            }
-            if (instant != null) {
-                holder.date.setText(instant.toDateTime().toLocalDate().toString());
-                holder.date.setVisibility(View.VISIBLE);
-            } else {
+            if (meh == null) {
+                holder.icon.setDefaultImageResId(R.drawable.ic_settings);
+                holder.title.setText(R.string.action_settings);
                 holder.date.setVisibility(View.GONE);
+            } else {
+                Instant instant = MehCache.getInstance(mContext).getInstant(meh);
+                Deal deal = meh.getDeal();
+                if (deal != null) {
+                    holder.title.setText(deal.getTitle());
+                    if (deal.getPhotos() != null && deal.getPhotos().length > 0) {
+                        holder.icon.setImageUrl(deal.getPhotos()[0], mImageLoader);
+                    }
+                }
+                if (instant != null) {
+                    holder.date.setText(instant.toString(DateTimeFormat.mediumDate()));
+                    holder.date.setVisibility(View.VISIBLE);
+                } else {
+                    holder.date.setVisibility(View.GONE);
+                }
             }
             return convertView;
         }
