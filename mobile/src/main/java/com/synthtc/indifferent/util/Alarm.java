@@ -35,7 +35,7 @@ public class Alarm {
         PendingIntent pendingIntent = PendingIntent.getBroadcast(context, REQUEST_CODE, intent, 0);
 
         if (set) {
-            long midnightEastern = DateTime.now(DateTimeZone.forID("US/Eastern")).withTimeAtStartOfDay().withFieldAdded(DurationFieldType.days(), 1).getMillis();
+            long midnightEastern = DateTime.now(Helper.TIME_ZONE).withTimeAtStartOfDay().withFieldAdded(DurationFieldType.days(), 1).getMillis();
             //midnightEastern = DateTime.now().withFieldAdded(DurationFieldType.minutes(), 15).getMillis();
             alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, midnightEastern, AlarmManager.INTERVAL_DAY, pendingIntent);
             //alarmManager.setRepeating(AlarmManager.ELAPSED_REALTIME, SystemClock.elapsedRealtime() + FIFTEEN_SEC_MILLIS, FIFTEEN_SEC_MILLIS, pendingIntent);

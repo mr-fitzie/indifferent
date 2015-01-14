@@ -1,7 +1,7 @@
 package com.synthtc.indifferent.ui;
 
 import android.app.Activity;
-import android.content.Intent;
+import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.os.Bundle;
@@ -22,11 +22,20 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
-import android.widget.Toast;
+import android.widget.TextView;
 
-import com.synthtc.indifferent.IndifferentReceiver;
+import com.android.volley.toolbox.ImageLoader;
+import com.android.volley.toolbox.NetworkImageView;
 import com.synthtc.indifferent.R;
-import com.synthtc.indifferent.util.Alarm;
+import com.synthtc.indifferent.api.Deal;
+import com.synthtc.indifferent.api.Meh;
+import com.synthtc.indifferent.util.MehCache;
+import com.synthtc.indifferent.util.VolleySingleton;
+
+import org.joda.time.Instant;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Fragment used for managing interactions for and presentation of a navigation drawer.
@@ -63,6 +72,7 @@ public class NavigationDrawerFragment extends Fragment {
     private int mCurrentSelectedPosition = 0;
     private boolean mFromSavedInstanceState;
     private boolean mUserLearnedDrawer;
+    private List<Meh> mMehs = new ArrayList<>();
 
     public NavigationDrawerFragment() {
     }
@@ -97,24 +107,22 @@ public class NavigationDrawerFragment extends Fragment {
                              Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.fragment_navigation_drawer, container, false);
         mDrawerListView = (ListView) rootView.findViewById(android.R.id.list);
+
+        MehCache mehCache = MehCache.getInstance(getActivity());
+
+        mMehs = mehCache.getAll();
+
         mDrawerListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 selectItem(position);
             }
         });
-        mDrawerListView.setAdapter(new ArrayAdapter<String>(
+
+        mDrawerListView.setAdapter(new NavAdapter(
                 getActionBar().getThemedContext(),
-                android.R.layout.simple_list_item_activated_1,
-                android.R.id.text1,
-                new String[]{
-                        "Today",
-                        "Yesterday",
-                        "Day Before Yesterday",
-                        "Older",
-                        "Even Older",
-                        "Older Still"
-                }));
+                R.layout.navigation_list_item,
+                mMehs));
         mDrawerListView.setItemChecked(mCurrentSelectedPosition, true);
 
         Button settings = (Button) rootView.findViewById(R.id.settings);
@@ -212,8 +220,12 @@ public class NavigationDrawerFragment extends Fragment {
         if (mDrawerLayout != null) {
             mDrawerLayout.closeDrawer(mFragmentContainerView);
         }
-        if (mCallbacks != null) {
-            mCallbacks.onNavigationDrawerItemSelected(position);
+        if (mCallbacks != null && mMehs.size() > position) {
+            if (position == -1) {
+                mCallbacks.onNavigationDrawerItemSelected(null);
+            } else {
+                mCallbacks.onNavigationDrawerItemSelected(mMehs.get(position));
+            }
         }
     }
 
@@ -298,6 +310,63 @@ public class NavigationDrawerFragment extends Fragment {
         /**
          * Called when an item in the navigation drawer is selected.
          */
-        void onNavigationDrawerItemSelected(int position);
+        void onNavigationDrawerItemSelected(Meh meh);
+    }
+
+    private static class NavAdapter extends ArrayAdapter<Meh> {
+        private Context mContext;
+        private List<Meh> mObjects;
+        private int mResourceId;
+        private ImageLoader mImageLoader;
+
+        public NavAdapter(Context context, int resource, List<Meh> objects) {
+            super(context, resource, objects);
+            mContext = context;
+            mObjects = objects;
+            mResourceId = resource;
+            mImageLoader = VolleySingleton.getInstance(context.getApplicationContext()).getImageLoader();
+        }
+
+        @Override
+        public View getView(int position, View convertView, ViewGroup parent) {
+            ViewHolder holder;
+            if (convertView == null) {
+                LayoutInflater inflater = (LayoutInflater) mContext.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+                convertView = inflater.inflate(mResourceId, parent, false);
+
+                holder = new ViewHolder();
+                holder.icon = (NetworkImageView) convertView.findViewById(android.R.id.icon1);
+                holder.icon.setDefaultImageResId(R.drawable.ic_meh);
+                holder.icon.setErrorImageResId(R.drawable.ic_sad_face);
+                holder.title = (TextView) convertView.findViewById(android.R.id.text1);
+                holder.date = (TextView) convertView.findViewById(android.R.id.text2);
+                convertView.setTag(holder);
+            } else {
+                holder = (ViewHolder) convertView.getTag();
+            }
+
+            Meh meh = mObjects.get(position);
+            Instant instant = MehCache.getInstance(mContext).getInstant(meh);
+            Deal deal = meh.getDeal();
+            if (deal != null) {
+                holder.title.setText(deal.getTitle());
+                if (deal.getPhotos() != null && deal.getPhotos().length > 0) {
+                    holder.icon.setImageUrl(deal.getPhotos()[0], mImageLoader);
+                }
+            }
+            if (instant != null) {
+                holder.date.setText(instant.toDateTime().toLocalDate().toString());
+                holder.date.setVisibility(View.VISIBLE);
+            } else {
+                holder.date.setVisibility(View.GONE);
+            }
+            return convertView;
+        }
+
+        private static class ViewHolder {
+            NetworkImageView icon;
+            TextView title;
+            TextView date;
+        }
     }
 }

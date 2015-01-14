@@ -9,23 +9,26 @@ import com.android.volley.toolbox.ImageLoader;
 import com.synthtc.indifferent.MainActivity;
 import com.synthtc.indifferent.api.Meh;
 
+import org.joda.time.DateTimeZone;
+
 /**
  * Created by Chris on 1/12/2015.
  */
 public class Helper {
+    public static DateTimeZone TIME_ZONE = DateTimeZone.forID("US/Eastern");
     private static String LOGTAG = MainActivity.LOGTAG + ".Helper";
 
     /**
      * http://stackoverflow.com/a/2241471
      *
      * @param context
-     * @param backgroindColor
+     * @param backgroundColor
      * @return
      */
-    public static int getForegroundColor(Context context, int backgroindColor) {
-        int r = Color.red(backgroindColor);
-        int g = Color.green(backgroindColor);
-        int b = Color.blue(backgroindColor);
+    public static int getForegroundColor(Context context, int backgroundColor) {
+        int r = Color.red(backgroundColor);
+        int g = Color.green(backgroundColor);
+        int b = Color.blue(backgroundColor);
         int v = (int) Math.sqrt((r * r * .299) + (g * g * .587) + (b * b * .114));
         int id = v > 130 ? android.support.v7.appcompat.R.color.primary_text_default_material_light : android.support.v7.appcompat.R.color.primary_text_default_material_dark;
         return context.getResources().getColor(id);

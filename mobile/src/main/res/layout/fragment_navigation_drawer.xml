@@ -24,5 +24,5 @@
         android:gravity="left|center_vertical"
         android:padding="@dimen/abc_control_padding_material"
         android:drawablePadding="@dimen/abc_control_inset_material"
-        android:textAppearance="?android:attr/textAppearanceListItemSmall" />
+        android:textAppearance="?android:attr/textAppearanceListItem" />
 </LinearLayout>

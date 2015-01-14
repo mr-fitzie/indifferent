@@ -14,19 +14,22 @@ import android.preference.PreferenceManager;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
+import com.android.volley.Request;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.ImageLoader;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.google.gson.Gson;
 import com.synthtc.indifferent.api.Meh;
 import com.synthtc.indifferent.ui.SettingsFragment;
 import com.synthtc.indifferent.util.Alarm;
-import com.synthtc.indifferent.util.GsonRequest;
 import com.synthtc.indifferent.util.MehCache;
 import com.synthtc.indifferent.util.VolleySingleton;
 
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.joda.time.Instant;
+import org.json.JSONObject;
 
 /**
  * Created by Chris on 1/10/2015.
@@ -58,19 +61,34 @@ public class IndifferentReceiver extends BroadcastReceiver {
                 requestImage(context, meh);
             } else {
                 String url = context.getString(R.string.api_url, context.getString(R.string.api_key));
-                Response.Listener<Meh> responseListener = new Response.Listener<Meh>() {
+                Response.Listener<JSONObject> responseListener = new Response.Listener<JSONObject>() {
                     @Override
-                    public void onResponse(Meh meh) {
-                        DateTime dateTime = DateTime.parse(meh.getDeal().getTopic().getCreatedAt());
-                        Instant dealDate = dateTime.withTimeAtStartOfDay().toInstant();
-                        if (dealDate == today) {
-                            mehCache.put(dealDate, meh, true);
-                            requestImage(context, meh);
-                            Log.d(MainActivity.LOGTAG, "VolleyResponse " + meh.getDeal().getId());
-                        } else {
-                            int retryMin = Integer.valueOf(prefs.getString(SettingsFragment.KEY_ALARM_RETRY_MIN, SettingsFragment.DEFAULT_ALARM_RETRY_MIN));
-                            if (DateTime.now().getMinuteOfHour() < retryMin) {
-                                checkAgain(context);
+                    public void onResponse(JSONObject jsonObject) {
+                        String createdAt = null;
+                        Gson gson = new Gson();
+                        Meh meh = gson.fromJson(jsonObject.toString(), Meh.class);
+                        if (meh.getDeal() != null && meh.getDeal().getTopic() != null) {
+                            createdAt = meh.getDeal().getTopic().getCreatedAt();
+                            Log.d(MainActivity.LOGTAG, "using Deal createdAt");
+                        } else if (meh.getPoll() != null && meh.getPoll().getStartDate() != null) {
+                            createdAt = meh.getPoll().getStartDate();
+                            Log.d(MainActivity.LOGTAG, "using poll startDate");
+                        } else if (meh.getVideo() != null && meh.getVideo().getStartDate() != null) {
+                            createdAt = meh.getVideo().getStartDate();
+                            Log.d(MainActivity.LOGTAG, "using Video startDate");
+                        }
+                        if (createdAt != null) {
+                            DateTime dateTime = DateTime.parse(createdAt).withTimeAtStartOfDay();
+                            Instant dealDate = dateTime.withTimeAtStartOfDay().toInstant();
+                            if (dealDate == today) {
+                                mehCache.put(dealDate, jsonObject, true);
+                                requestImage(context, meh);
+                                Log.d(MainActivity.LOGTAG, "VolleyResponse " + meh.getDeal().getId());
+                            } else {
+                                int retryMin = Integer.valueOf(prefs.getString(SettingsFragment.KEY_ALARM_RETRY_MIN, SettingsFragment.DEFAULT_ALARM_RETRY_MIN));
+                                if (DateTime.now().getMinuteOfHour() < retryMin) {
+                                    checkAgain(context);
+                                }
                             }
                         }
                     }
@@ -82,7 +100,7 @@ public class IndifferentReceiver extends BroadcastReceiver {
                         checkAgain(context);
                     }
                 };
-                GsonRequest request = new GsonRequest(url, Meh.class, null, responseListener, responseErrorListener);
+                JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, url, null, responseListener, responseErrorListener);
                 VolleySingleton.getInstance(context.getApplicationContext()).addToRequestQueue(request);
             }
         }
