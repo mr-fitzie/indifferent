@@ -18,7 +18,6 @@ import org.joda.time.DurationFieldType;
  */
 public class Alarm {
     public static final int REQUEST_CODE = 0;
-    public static final int FIFTEEN_SEC_MILLIS = 15000;
 
     public static void set(Context context) {
         handleAlarm(context, true);
@@ -39,10 +38,10 @@ public class Alarm {
             //midnightEastern = DateTime.now().withFieldAdded(DurationFieldType.minutes(), 15).getMillis();
             alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, midnightEastern, AlarmManager.INTERVAL_DAY, pendingIntent);
             //alarmManager.setRepeating(AlarmManager.ELAPSED_REALTIME, SystemClock.elapsedRealtime() + FIFTEEN_SEC_MILLIS, FIFTEEN_SEC_MILLIS, pendingIntent);
-            Log.i(MainActivity.LOGTAG, "Alarm set for " + midnightEastern + " repeating every " + AlarmManager.INTERVAL_DAY);
+            Helper.log(Log.DEBUG, "Alarm set for " + midnightEastern + " repeating every " + AlarmManager.INTERVAL_DAY);
         } else {
             alarmManager.cancel(pendingIntent);
-            Log.i(MainActivity.LOGTAG, "Alarm canceled. ");
+            Helper.log(Log.DEBUG, "Alarm canceled. ");
         }
     }
 }

@@ -109,7 +109,7 @@ public class MainActivity extends ActionBarActivity implements NavigationDrawerF
             Instant instant = MehCache.getInstance(this).getInstant(meh);
             loadFragment(DealFragment.newInstance(instant, meh));
         }
-        Log.d(LOGTAG, "onNavigationDrawerItemSelected");
+        Helper.log(Log.DEBUG, "onNavigationDrawerItemSelected");
     }
 
     private void initialize() {
@@ -169,7 +169,7 @@ public class MainActivity extends ActionBarActivity implements NavigationDrawerF
                 @Override
                 public void onErrorResponse(VolleyError volleyError) {
                     loadFragment(PlaceholderFragment.newInstance(PlaceholderFragment.ARG_SECTION_ERROR));
-                    Log.e(LOGTAG, "VolleyError", volleyError);
+                    Helper.log(Log.ERROR, "VolleyError", volleyError);
                 }
             };
             JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, url, null, responseListener, responseErrorListener);
@@ -252,7 +252,7 @@ public class MainActivity extends ActionBarActivity implements NavigationDrawerF
 
         @Override
         public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-            Log.d(LOGTAG, "DealFragment.onCreateView");
+            Helper.log(Log.DEBUG, "DealFragment.onCreateView");
             Helper.cacheImages(getActivity(), mMeh);
 
             View rootView = inflater.inflate(R.layout.fragment_deal, container, false);
@@ -385,7 +385,7 @@ public class MainActivity extends ActionBarActivity implements NavigationDrawerF
                 layoutId = R.layout.fragment_error;
             }
             View rootView = inflater.inflate(layoutId, container, false);
-            Log.d(LOGTAG, "PlaceholderFragmentonCreateView " + mSectionNumber);
+            Helper.log(Log.DEBUG, "PlaceholderFragmentonCreateView " + mSectionNumber);
             return rootView;
         }
 

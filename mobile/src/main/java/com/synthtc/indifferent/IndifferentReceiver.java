@@ -23,6 +23,7 @@ import com.google.gson.Gson;
 import com.synthtc.indifferent.api.Meh;
 import com.synthtc.indifferent.ui.SettingsFragment;
 import com.synthtc.indifferent.util.Alarm;
+import com.synthtc.indifferent.util.Helper;
 import com.synthtc.indifferent.util.MehCache;
 import com.synthtc.indifferent.util.VolleySingleton;
 
@@ -36,6 +37,7 @@ import org.json.JSONObject;
  */
 public class IndifferentReceiver extends BroadcastReceiver {
     public static final String INTENT_MEH = "com.synthtc.indifferent.MEH";
+    public static final int THIRTY_SEC_MILLIS = 30000;
     private static final int NOTIFICATION_ID = 1;
     private NotificationManager mNotificationManager = null;
 
@@ -48,12 +50,12 @@ public class IndifferentReceiver extends BroadcastReceiver {
 
         String action = intent.getAction();
         if (action.equals(Intent.ACTION_BOOT_COMPLETED)) {
-            Log.e(MainActivity.LOGTAG, "BOOT COMPLETED");
+            Helper.log(Log.DEBUG, "BOOT COMPLETED");
             if (prefs.getBoolean(SettingsFragment.KEY_ALARM_ENABLE, SettingsFragment.DEFAULT_ALARM_ENABLE)) {
                 Alarm.set(context);
             }
         } else if (action.equals(INTENT_MEH)) {
-            Log.e(MainActivity.LOGTAG, "alarm triggered");
+            Helper.log(Log.DEBUG, "alarm triggered");
             final MehCache mehCache = MehCache.getInstance(context);
             final Instant today = DateTime.now(DateTimeZone.UTC).withTimeAtStartOfDay().toInstant();
             Meh meh = mehCache.get(today);
@@ -64,31 +66,19 @@ public class IndifferentReceiver extends BroadcastReceiver {
                 Response.Listener<JSONObject> responseListener = new Response.Listener<JSONObject>() {
                     @Override
                     public void onResponse(JSONObject jsonObject) {
-                        String createdAt = null;
                         Gson gson = new Gson();
                         Meh meh = gson.fromJson(jsonObject.toString(), Meh.class);
-                        if (meh.getDeal() != null && meh.getDeal().getTopic() != null) {
-                            createdAt = meh.getDeal().getTopic().getCreatedAt();
-                            Log.d(MainActivity.LOGTAG, "using Deal createdAt");
-                        } else if (meh.getPoll() != null && meh.getPoll().getStartDate() != null) {
-                            createdAt = meh.getPoll().getStartDate();
-                            Log.d(MainActivity.LOGTAG, "using poll startDate");
-                        } else if (meh.getVideo() != null && meh.getVideo().getStartDate() != null) {
-                            createdAt = meh.getVideo().getStartDate();
-                            Log.d(MainActivity.LOGTAG, "using Video startDate");
-                        }
-                        if (createdAt != null) {
-                            DateTime dateTime = DateTime.parse(createdAt).withTimeAtStartOfDay();
-                            Instant dealDate = dateTime.withTimeAtStartOfDay().toInstant();
-                            if (dealDate == today) {
-                                mehCache.put(dealDate, jsonObject, true);
-                                requestImage(context, meh);
-                                Log.d(MainActivity.LOGTAG, "VolleyResponse " + meh.getDeal().getId());
-                            } else {
-                                int retryMin = Integer.valueOf(prefs.getString(SettingsFragment.KEY_ALARM_RETRY_MIN, SettingsFragment.DEFAULT_ALARM_RETRY_MIN));
-                                if (DateTime.now().getMinuteOfHour() < retryMin) {
-                                    checkAgain(context);
-                                }
+                        Instant instant = mehCache.getInstant(meh);
+                        Helper.log(Log.DEBUG, "IndifferentReceiver onResponse " + instant.toString());
+                        if (instant != null && instant == today) {
+                            mehCache.put(instant, jsonObject, true);
+                            requestImage(context, meh);
+                            Helper.log(Log.DEBUG, "VolleyResponse " + meh.getDeal().getId());
+                        } else {
+                            int retryMin = Integer.valueOf(prefs.getString(SettingsFragment.KEY_ALARM_RETRY_MIN, SettingsFragment.DEFAULT_ALARM_RETRY_MIN));
+                            Helper.log(Log.DEBUG, "IndifferentReceiver not today (" + today.toString() + ") gonna try again for total of " + retryMin + " min");
+                            if (DateTime.now().getMinuteOfHour() < retryMin) {
+                                checkAgain(context);
                             }
                         }
                     }
@@ -96,7 +86,7 @@ public class IndifferentReceiver extends BroadcastReceiver {
                 Response.ErrorListener responseErrorListener = new Response.ErrorListener() {
                     @Override
                     public void onErrorResponse(VolleyError volleyError) {
-                        Log.e(MainActivity.LOGTAG, "VolleyError", volleyError);
+                        Helper.log(Log.ERROR, "VolleyError", volleyError);
                         checkAgain(context);
                     }
                 };
@@ -107,14 +97,14 @@ public class IndifferentReceiver extends BroadcastReceiver {
     }
 
     private void checkAgain(final Context context) {
-        Log.d(MainActivity.LOGTAG, "checkingAgain");
+        Helper.log(Log.DEBUG, "checkingAgain");
         Handler handler = new Handler();
         handler.postDelayed(new Runnable() {
             @Override
             public void run() {
                 context.sendBroadcast(new Intent(INTENT_MEH));
             }
-        }, Alarm.FIFTEEN_SEC_MILLIS);
+        }, THIRTY_SEC_MILLIS);
     }
 
     private void requestImage(final Context context, final Meh meh) {

@@ -12,7 +12,7 @@ public class SettingsFragment extends PreferenceFragment implements SharedPrefer
     public static String KEY_ALARM_ENABLE = "pref_alarm_enable";
     public static String KEY_ALARM_RETRY_MIN = "pref_alarm_retry";
     public static String KEY_ALARM_TEST = "pref_alarm_test";
-    public static String DEFAULT_ALARM_RETRY_MIN = "5";
+    public static String DEFAULT_ALARM_RETRY_MIN = "10";
     public static boolean DEFAULT_ALARM_ENABLE = true;
 
     @Override

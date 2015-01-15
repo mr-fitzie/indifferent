@@ -9,7 +9,7 @@
             android:summary="@string/pref_alarm_enable_summary"
             android:title="@string/pref_alarm_enable_title" />
         <ListPreference
-            android:defaultValue="5"
+            android:defaultValue="10"
             android:entries="@array/pref_alarm_retry"
             android:entryValues="@array/pref_alarm_retry_values"
             android:key="pref_alarm_retry"
