@@ -24,6 +24,12 @@ public class Helper {
     public static DateTimeZone TIME_ZONE = DateTimeZone.forID("US/Eastern");
     private static String LOGTAG = MainActivity.LOGTAG + ".Helper";
 
+
+    public static int getForegroundColor(Context context, int backgroundColor) {
+        return getForegroundColor(context, backgroundColor,
+                android.support.v7.appcompat.R.color.primary_text_default_material_light, android.support.v7.appcompat.R.color.primary_text_default_material_dark);
+    }
+
     /**
      * http://stackoverflow.com/a/2241471
      *
@@ -31,24 +37,39 @@ public class Helper {
      * @param backgroundColor
      * @return
      */
-    public static int getForegroundColor(Context context, int backgroundColor) {
+    public static int getForegroundColor(Context context, int backgroundColor, int lightColorId, int darkColorId) {
         int r = Color.red(backgroundColor);
         int g = Color.green(backgroundColor);
         int b = Color.blue(backgroundColor);
         int v = (int) Math.sqrt((r * r * .299) + (g * g * .587) + (b * b * .114));
-        int id = v > 130 ? android.support.v7.appcompat.R.color.primary_text_default_material_light : android.support.v7.appcompat.R.color.primary_text_default_material_dark;
+        int id = v > 130 ? lightColorId : darkColorId;
         return context.getResources().getColor(id);
     }
 
+    /**
+     * http://stackoverflow.com/a/6615053
+     *
+     * @param color
+     * @param foreground
+     * @return
+     */
     public static int getHighlightColor(int color, String foreground) {
-        float[] hsv = new float[3];
-        Color.colorToHSV(color, hsv);
+        int r = Color.red(color);
+        int g = Color.green(color);
+        int b = Color.blue(color);
+        int rc;
+        int gc;
+        int bc;
         if ("dark".equals(foreground)) {
-            hsv[2] = 1.0f - 0.8f * (1.0f - hsv[2]);
+            rc = (int) (r * 0.25);
+            gc = (int) (g * 0.25);
+            bc = (int) (b * 0.25);
         } else {
-            hsv[2] = 0.2f + 0.8f * hsv[2];
+            rc = (int) (r + (0.25 * (255 - r)));
+            gc = (int) (g + (0.25 * (255 - g)));
+            bc = (int) (b + (0.25 * (255 - b)));
         }
-        return Color.HSVToColor(hsv);
+        return Color.rgb(rc, gc, bc);
     }
 
     public static void cacheImages(Context context, Meh meh) {
@@ -109,7 +130,7 @@ public class Helper {
             if (e != null) {
                 trace = "\n" + e.toString();
             }
-            writer.write(DateTime.now(DateTimeZone.UTC).toString() + " " + level + ": " + text + trace + "\n");
+            writer.write("[" + DateTime.now().toString() + "::" + level + "] " + text + trace + "\n");
             writer.flush();
             writer.close();
         } catch (IOException ie) {

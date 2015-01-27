@@ -1,10 +1,13 @@
 package com.synthtc.indifferent;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.GradientDrawable;
+import android.graphics.drawable.StateListDrawable;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
@@ -17,16 +20,19 @@ import android.support.v7.app.ActionBar;
 import android.support.v7.app.ActionBarActivity;
 import android.text.method.LinkMovementMethod;
 import android.util.Log;
+import android.util.StateSet;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.TextView;
 
 import com.android.volley.Request;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
+import com.getbase.floatingactionbutton.FloatingActionButton;
 import com.google.gson.Gson;
 import com.synthtc.indifferent.api.Deal;
 import com.synthtc.indifferent.api.Meh;
@@ -40,7 +46,6 @@ import com.synthtc.indifferent.util.VolleySingleton;
 import com.viewpagerindicator.CirclePageIndicator;
 
 import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
 import org.joda.time.Instant;
 import org.json.JSONObject;
 
@@ -50,23 +55,21 @@ import in.uncod.android.bypass.Bypass;
 
 public class MainActivity extends ActionBarActivity implements NavigationDrawerFragment.NavigationDrawerCallbacks {
     public static final String LOGTAG = "Indifferent";
-
+    private static Instant mToday;
     /**
      * Fragment managing the behaviors, interactions and presentation of the navigation drawer.
      */
     private NavigationDrawerFragment mNavigationDrawerFragment;
-
     /**
      * Used to store the last screen title. For use in {@link #restoreActionBar()}.
      */
     private CharSequence mTitle;
     private int mColor = R.color.primary_material_dark;
     private int mColorStatus = R.color.primary_dark_material_dark;
-
+    private int mColorNav = R.color.primary_dark_material_dark;
     private boolean mIsPaused = false;
     private Fragment mFragmentToLoad = null;
     private boolean mInitialized = false;
-
 
     @Override
     protected void onPause() {
@@ -121,7 +124,7 @@ public class MainActivity extends ActionBarActivity implements NavigationDrawerF
 
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
         if (prefs.getBoolean(SettingsFragment.KEY_ALARM_ENABLE, SettingsFragment.DEFAULT_ALARM_ENABLE)) {
-            Alarm.set(this);
+            Alarm.set(this, false);
         }
 
         final MehCache mehCache = MehCache.getInstance(this);
@@ -136,20 +139,24 @@ public class MainActivity extends ActionBarActivity implements NavigationDrawerF
         for (String json : samples) {
             Meh sample = gson.fromJson(json, Meh.class);
             DateTime dateTime = DateTime.parse(sample.getDeal().getTopic().getCreatedAt());
-            Instant instant = dateTime.withTimeAtStartOfDay().toInstant();
-            mehCache.put(instant, json, true);
+            Instant instant = dateTime.withZone(Helper.TIME_ZONE).withTimeAtStartOfDay().toInstant();
+            mehCache.put(instant, json, false);
         }
 
-        final Meh meh = mehCache.get(DateTime.now(DateTimeZone.UTC).withTimeAtStartOfDay().toInstant());
+        mToday = DateTime.now(Helper.TIME_ZONE).withTimeAtStartOfDay().toInstant();
+        Helper.log(Log.DEBUG, "today is " + mToday);
+        final Meh meh = mehCache.get(mToday);
         if (meh != null) {
             Instant instant = mehCache.getInstant(meh);
             if (instant != null) {
+                Helper.log(Log.DEBUG, "initialize in cache");
                 loadFragment(DealFragment.newInstance(instant, meh));
                 restoreActionBar();
             } else {
                 loadFragment(PlaceholderFragment.newInstance(PlaceholderFragment.ARG_SECTION_ERROR));
             }
         } else {
+            Helper.log(Log.DEBUG, "initialize not in cache");
             final String url = getString(R.string.api_url, getString(R.string.api_key));
             final Response.Listener<JSONObject> responseListener = new Response.Listener<JSONObject>() {
                 @Override
@@ -157,7 +164,9 @@ public class MainActivity extends ActionBarActivity implements NavigationDrawerF
                     Meh meh = gson.fromJson(jsonObject.toString(), Meh.class);
                     Instant instant = mehCache.getInstant(meh);
                     if (instant != null) {
+                        Helper.log(Log.DEBUG, "initialize not in cache pulled down, updating sidebar and frag");
                         mehCache.put(instant, jsonObject, true);
+                        mNavigationDrawerFragment.updateList();
                         loadFragment(DealFragment.newInstance(instant, meh));
                     } else {
                         loadFragment(PlaceholderFragment.newInstance(PlaceholderFragment.ARG_SECTION_ERROR));
@@ -178,6 +187,7 @@ public class MainActivity extends ActionBarActivity implements NavigationDrawerF
     }
 
     public void restoreActionBar() {
+        Helper.log(Log.DEBUG, "restoreActionBar");
         ActionBar actionBar = getSupportActionBar();
         actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_STANDARD);
         actionBar.setDisplayShowTitleEnabled(true);
@@ -185,6 +195,7 @@ public class MainActivity extends ActionBarActivity implements NavigationDrawerF
         actionBar.setTitle(mTitle);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             getWindow().setStatusBarColor(mColorStatus);
+            getWindow().setNavigationBarColor(mColorNav);
         }
     }
 
@@ -233,6 +244,7 @@ public class MainActivity extends ActionBarActivity implements NavigationDrawerF
     public static class DealFragment extends Fragment {
         public static final String ARG_INSTANT = "deal_instant";
         private static Meh mMeh;
+        private static Instant mDealDate;
         private ViewPager mPager;
         private ImagePagerAdapter mAdapter;
 
@@ -240,7 +252,9 @@ public class MainActivity extends ActionBarActivity implements NavigationDrawerF
         }
 
         public static DealFragment newInstance(Instant instant, Meh mehObject) {
+            mDealDate = instant;
             mMeh = mehObject;
+
             DealFragment fragment = new DealFragment();
             Bundle args = new Bundle();
             args.putLong(ARG_INSTANT, instant.getMillis());
@@ -257,7 +271,7 @@ public class MainActivity extends ActionBarActivity implements NavigationDrawerF
 
             View rootView = inflater.inflate(R.layout.fragment_deal, container, false);
 
-            Deal deal = mMeh.getDeal();
+            final Deal deal = mMeh.getDeal();
             Deal.Theme theme = deal.getTheme();
             Deal.Story story = deal.getStory();
 
@@ -265,6 +279,7 @@ public class MainActivity extends ActionBarActivity implements NavigationDrawerF
             int foregroundColor = Helper.getForegroundColor(getActivity(), accentColor);
             int backgroundColor = Color.parseColor(theme.getBackgroundColor());
             int textColor = Helper.getForegroundColor(getActivity(), backgroundColor);
+            int highlightColor = Helper.getHighlightColor(accentColor, theme.getForeground());
 
             // Set up ViewPager and backing adapter
             mAdapter = new ImagePagerAdapter(getActivity().getSupportFragmentManager(), mMeh.getDeal().getPhotos().length);
@@ -278,43 +293,84 @@ public class MainActivity extends ActionBarActivity implements NavigationDrawerF
             circleIndicator.setFillColor(accentColor);
             circleIndicator.setStrokeColor(textColor);
 
-            TextView price = (TextView) rootView.findViewById(R.id.price);
+            Button price = (Button) rootView.findViewById(R.id.price);
+            GradientDrawable pill = (GradientDrawable) price.getBackground();
             TextView title = (TextView) rootView.findViewById(R.id.title);
             TextView features = (TextView) rootView.findViewById(R.id.features);
             TextView storyTitle = (TextView) rootView.findViewById(R.id.story_title);
             TextView storyBody = (TextView) rootView.findViewById(R.id.story);
             TextView specifications = (TextView) rootView.findViewById(R.id.specifications);
+            FloatingActionButton fab = (FloatingActionButton) rootView.findViewById(R.id.fab_meh);
 
+            fab.setColorNormal(accentColor);
+            fab.setColorPressed(highlightColor);
+            fab.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(deal.getUrl()));
+                    getActivity().startActivity(browserIntent);
+                }
+            });
 
-            price.setText(deal.getPrices(getActivity()));
-            price.setTextColor(foregroundColor);
-            GradientDrawable pill = (GradientDrawable) price.getBackground();
-            pill.setColor(accentColor);
-            pill.setStroke(getResources().getDimensionPixelSize(R.dimen.stroke_width), Helper.getHighlightColor(accentColor, theme.getForeground()));
+            String prices = deal.getPrices(getActivity());
+            boolean tooLate = mDealDate.isBefore(mToday);
+            if (deal.getSoldOutAt() != null || tooLate) {
+                price.setTextColor(getResources().getColor(R.color.primary_material_light));
+                price.setText(getString(deal.getSoldOutAt() != null ? R.string.deal_price_soldout : R.string.deal_price_toolate, prices));
+                price.setEnabled(false);
+                pill.setColor(Helper.getForegroundColor(getActivity(), backgroundColor, R.color.primary_dark_material_dark, R.color.primary_dark_material_light));
+            } else {
+                GradientDrawable pillPressed = (GradientDrawable) pill.getConstantState().newDrawable().mutate();
+                pill.setColor(accentColor);
+                pillPressed.setColor(highlightColor);
+
+                StateListDrawable states = new StateListDrawable();
+                states.addState(new int[]{android.R.attr.state_pressed}, pillPressed);
+                states.addState(StateSet.WILD_CARD, pill);
+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+                    price.setBackground(states);
+                } else {
+                    price.setBackgroundDrawable(states);
+                }
+
+                price.setTextColor(foregroundColor);
+                price.setText(getString(R.string.deal_price_buy, prices));
+                price.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(deal.getUrl().concat("/checkout")));
+                        getActivity().startActivity(browserIntent);
+                    }
+                });
+            }
+
             title.setText(deal.getTitle());
             title.setTextColor(textColor);
 
             Bypass bypass = new Bypass(getActivity());
-            CharSequence string = bypass.markdownToSpannable(deal.getFeatures());
-            features.setText(string);
+            CharSequence markDown = bypass.markdownToSpannable(deal.getFeatures());
+            features.setText(markDown);
             features.setTextColor(textColor);
 
             if (story != null) {
                 storyTitle.setText(deal.getStory().getTitle());
-                storyTitle.setTextColor(textColor);
-                string = bypass.markdownToSpannable(deal.getStory().getBody());
-                storyBody.setText(string);
+                storyTitle.setTextColor(accentColor);
+                markDown = bypass.markdownToSpannable(deal.getStory().getBody());
+                storyBody.setText(markDown);
                 storyBody.setTextColor(textColor);
                 storyBody.setMovementMethod(LinkMovementMethod.getInstance());
+                storyBody.setLinkTextColor(accentColor);
             } else {
                 storyTitle.setVisibility(View.GONE);
                 storyBody.setVisibility(View.GONE);
             }
 
-            string = bypass.markdownToSpannable(deal.getSpecifications());
-            specifications.setText(string);
+            markDown = bypass.markdownToSpannable(deal.getSpecifications());
+            specifications.setText(markDown);
             specifications.setTextColor(textColor);
             specifications.setMovementMethod(LinkMovementMethod.getInstance());
+            specifications.setLinkTextColor(accentColor);
 
             rootView.setBackgroundColor(backgroundColor);
             return rootView;
@@ -328,6 +384,8 @@ public class MainActivity extends ActionBarActivity implements NavigationDrawerF
             Deal.Theme theme = mMeh.getDeal().getTheme();
             mainActivity.mColor = Color.parseColor(theme.getAccentColor());
             mainActivity.mColorStatus = Helper.getHighlightColor(mainActivity.mColor, theme.getForeground());
+            mainActivity.mColorNav = Helper.getHighlightColor(Color.parseColor(theme.getBackgroundColor()), theme.getForeground());
+            Helper.log(Log.DEBUG, "onAttach " + mainActivity.mTitle + " " + mainActivity.mColor + " " + mainActivity.mColorStatus);
         }
 
         private class ImagePagerAdapter extends FragmentStatePagerAdapter {
@@ -397,6 +455,7 @@ public class MainActivity extends ActionBarActivity implements NavigationDrawerF
             mainActivity.mTitle = getString(R.string.error_oops);
             mainActivity.mColor = getResources().getColor(R.color.primary_material_dark);
             mainActivity.mColorStatus = getResources().getColor(R.color.primary_dark_material_dark);
+            mainActivity.mColorNav = getResources().getColor(R.color.primary_dark_material_dark);
         }
     }
 }

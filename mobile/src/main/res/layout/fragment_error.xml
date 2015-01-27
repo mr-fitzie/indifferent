@@ -12,12 +12,13 @@
         android:layout_height="match_parent"
         android:layout_centerInParent="true"
         android:scaleType="fitCenter"
-        android:src="@drawable/ic_sad_face" />
+        android:src="@drawable/ic_error" />
+
     <TextView
         android:layout_centerHorizontal="true"
         android:layout_alignParentBottom="true"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/error_something_went_wrong"/>
+        android:text="@string/error_something_went_wrong" />
 
 </RelativeLayout>

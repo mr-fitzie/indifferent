@@ -12,7 +12,7 @@
         android:layout_height="match_parent"
         android:background="?android:selectableItemBackground"
         android:scaleType="fitCenter"
-        android:src="@drawable/ic_meh" />
+        android:src="@drawable/ic_cached" />
 
     <TextView
         android:id="@+id/loading"
@@ -38,6 +38,6 @@
         android:layout_height="wrap_content"
         android:indeterminate="true"
         android:layout_toRightOf="@android:id/empty"
-        android:layout_toEndOf="@android:id/empty"/>
+        android:layout_toEndOf="@android:id/empty" />
 
 </RelativeLayout>

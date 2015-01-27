@@ -6,7 +6,6 @@ import android.util.Log;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
-import com.synthtc.indifferent.MainActivity;
 import com.synthtc.indifferent.api.Meh;
 
 import org.joda.time.DateTime;
@@ -77,18 +76,18 @@ public class MehCache {
         String createdAt = null;
         if (meh.getDeal() != null && meh.getDeal().getTopic() != null) {
             createdAt = meh.getDeal().getTopic().getCreatedAt();
-            Helper.log(Log.DEBUG, "using Deal createdAt");
+            Helper.log(Log.DEBUG, "using Deal createdAt " + createdAt);
         } else if (meh.getPoll() != null && meh.getPoll().getStartDate() != null) {
             createdAt = meh.getPoll().getStartDate();
-            Helper.log(Log.DEBUG, "using poll startDate");
+            Helper.log(Log.DEBUG, "using Poll startDate " + createdAt);
         } else if (meh.getVideo() != null && meh.getVideo().getStartDate() != null) {
             createdAt = meh.getVideo().getStartDate();
-            Helper.log(Log.DEBUG, "using Video startDate");
+            Helper.log(Log.DEBUG, "using Video startDate " + createdAt);
         }
         Instant instant = null;
         if (createdAt != null) {
             DateTime dateTime = DateTime.parse(createdAt);
-            instant = dateTime.withTimeAtStartOfDay().toInstant();
+            instant = dateTime.withZone(Helper.TIME_ZONE).withTimeAtStartOfDay().toInstant();
         }
         return instant;
     }

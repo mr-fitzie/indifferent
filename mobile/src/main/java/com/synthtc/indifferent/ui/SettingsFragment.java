@@ -1,13 +1,13 @@
 package com.synthtc.indifferent.ui;
 
-import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.preference.Preference;
 
 import com.github.machinarius.preferencefragment.PreferenceFragment;
 import com.synthtc.indifferent.R;
 import com.synthtc.indifferent.util.Alarm;
 
-public class SettingsFragment extends PreferenceFragment implements SharedPreferences.OnSharedPreferenceChangeListener {
+public class SettingsFragment extends PreferenceFragment implements Preference.OnPreferenceChangeListener {
     // Keep the following values in sync with the preferences.xml
     public static String KEY_ALARM_ENABLE = "pref_alarm_enable";
     public static String KEY_ALARM_RETRY_MIN = "pref_alarm_retry";
@@ -19,28 +19,22 @@ public class SettingsFragment extends PreferenceFragment implements SharedPrefer
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         addPreferencesFromResource(R.xml.preferences);
+        Preference enableAlarm = findPreference(KEY_ALARM_ENABLE);
+        enableAlarm.setOnPreferenceChangeListener(this);
     }
 
     @Override
-    public void onResume() {
-        super.onResume();
-        getPreferenceScreen().getSharedPreferences().registerOnSharedPreferenceChangeListener(this);
-    }
-
-    @Override
-    public void onPause() {
-        super.onPause();
-        getPreferenceScreen().getSharedPreferences().unregisterOnSharedPreferenceChangeListener(this);
-    }
-
-    @Override
-    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-        if (KEY_ALARM_ENABLE.equals(key)) {
-            if (sharedPreferences.getBoolean(KEY_ALARM_ENABLE, DEFAULT_ALARM_ENABLE)) {
-                Alarm.set(getActivity());
+    public boolean onPreferenceChange(Preference preference, Object newValue) {
+        if (preference.getKey().equals(KEY_ALARM_ENABLE)) {
+            Boolean isChecked = (Boolean) newValue;
+            if (isChecked) {
+                Alarm.set(getActivity(), false);
+                preference.setIcon(R.drawable.ic_alarm_on);
             } else {
-                Alarm.cancel(getActivity());
+                Alarm.cancel(getActivity(), false);
+                preference.setIcon(R.drawable.ic_alarm_off);
             }
         }
+        return true;
     }
 }

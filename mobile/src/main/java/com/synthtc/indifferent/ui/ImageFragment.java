@@ -54,12 +54,8 @@ public class ImageFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         mImageView = new NetworkImageView(getActivity());
-        mImageView.setDefaultImageResId(R.drawable.ic_meh);
-        mImageView.setErrorImageResId(R.drawable.ic_sad_face);
-//        ViewGroup.LayoutParams params = mImageView.getLayoutParams();
-//        params.height = ViewGroup.LayoutParams.MATCH_PARENT;
-//        params.width = ViewGroup.LayoutParams.MATCH_PARENT;
-//        mImageView.setLayoutParams(params);
+        mImageView.setDefaultImageResId(R.drawable.ic_cached);
+        mImageView.setErrorImageResId(R.drawable.ic_error);
 
         // Get the ImageLoader through your singleton class.
         ImageLoader mImageLoader = VolleySingleton.getInstance(getActivity().getApplicationContext()).getImageLoader();
@@ -74,18 +70,6 @@ public class ImageFragment extends Fragment {
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
-
-        // Use the parent activity to load the image asynchronously into the ImageView (so a single
-        // cache can be used over all pages in the ViewPager
-        //if (MainActivity.class.isInstance(getActivity())) {
-        //mImageFetcher = ((ImageDetailActivity) getActivity()).getImageFetcher();
-        //mImageFetcher.loadImage(mImageUrl, mImageView);
-        //}
-
-        // Pass clicks on the ImageView to the parent activity to handle
-        //if (View.OnClickListener.class.isInstance(getActivity())) {
-        //mImageView.setOnClickListener((View.OnClickListener) getActivity());
-        //}
     }
 
     @Override

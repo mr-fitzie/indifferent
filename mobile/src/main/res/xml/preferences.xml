@@ -5,6 +5,7 @@
         android:title="@string/pref_alarm">
         <CheckBoxPreference
             android:defaultValue="true"
+            android:icon="@drawable/ic_alarm_on"
             android:key="pref_alarm_enable"
             android:summary="@string/pref_alarm_enable_summary"
             android:title="@string/pref_alarm_enable_title" />
@@ -12,15 +13,21 @@
             android:defaultValue="10"
             android:entries="@array/pref_alarm_retry"
             android:entryValues="@array/pref_alarm_retry_values"
+            android:icon="@drawable/ic_history"
             android:key="pref_alarm_retry"
             android:negativeButtonText="@null"
             android:positiveButtonText="@null"
             android:summary="@string/pref_alarm_retry_summary"
             android:title="@string/pref_alarm_retry_title" />
         <com.synthtc.indifferent.util.BroadcastPreference
+            android:icon="@drawable/ic_notifications"
             android:key="pref_alarm_test"
             android:title="@string/pref_alarm_test_title">
-            <intent android:action="com.synthtc.indifferent.MEH" />
+            <intent android:action="com.synthtc.indifferent.MEH">
+                <extra
+                    android:name="from"
+                    android:value="settings" />
+            </intent>
         </com.synthtc.indifferent.util.BroadcastPreference>
     </PreferenceCategory>
 </PreferenceScreen>

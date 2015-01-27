@@ -18,7 +18,7 @@
         android:layout_centerVertical="true"
         android:layout_marginEnd="@dimen/abc_control_inset_material"
         android:layout_marginRight="@dimen/abc_control_inset_material"
-        android:src="@drawable/ic_meh" />
+        android:src="@drawable/ic_cached" />
 
     <TextView
         android:id="@android:id/text1"

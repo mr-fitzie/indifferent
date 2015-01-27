@@ -1,75 +1,83 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:fab="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:paddingBottom="@dimen/activity_vertical_margin"
-    android:paddingLeft="@dimen/activity_horizontal_margin"
-    android:paddingRight="@dimen/activity_horizontal_margin"
-    android:paddingTop="@dimen/activity_vertical_margin">
+    android:layout_height="match_parent">
 
-    <LinearLayout
+    <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="vertical">
+        android:paddingBottom="@dimen/activity_vertical_margin"
+        android:paddingLeft="@dimen/activity_horizontal_margin"
+        android:paddingRight="@dimen/activity_horizontal_margin"
+        android:paddingTop="@dimen/activity_vertical_margin">
 
-        <android.support.v4.view.ViewPager
-            android:id="@+id/pager"
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="@dimen/image_min_height" />
+            android:layout_height="match_parent"
+            android:orientation="vertical">
 
-        <com.viewpagerindicator.CirclePageIndicator
-            android:id="@+id/pager_indicator"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:layout_margin="@dimen/abc_control_padding_material" />
+            <android.support.v4.view.ViewPager
+                android:id="@+id/pager"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/image_min_height" />
 
-        <TextView
-            android:id="@+id/price"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:layout_margin="@dimen/abc_control_padding_material"
-            android:background="@drawable/shape_pill"
-            android:text="@string/deal_price_range"
-            android:textStyle="bold" />
+            <com.viewpagerindicator.CirclePageIndicator
+                android:id="@+id/pager_indicator"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_margin="@dimen/abc_control_padding_material" />
 
-        <TextView
-            android:id="@+id/title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/deal_title"
-            android:textAppearance="@android:style/TextAppearance.Large" />
+            <Button
+                android:id="@+id/price"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_margin="@dimen/abc_control_padding_material"
+                android:background="@drawable/shape_pill"
+                android:elevation="@dimen/buy_elevation"
+                android:text="@string/deal_price_range" />
 
-        <TextView
-            android:id="@+id/features"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/deal_features" />
+            <TextView
+                android:id="@+id/title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/deal_title"
+                android:textAppearance="@android:style/TextAppearance.Large" />
 
-        <TextView
-            android:id="@+id/story_title"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/deal_title"
-            android:textAppearance="@android:style/TextAppearance.Large" />
+            <TextView
+                android:id="@+id/features"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/deal_features" />
 
-        <TextView
-            android:id="@+id/story"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/deal_story" />
+            <TextView
+                android:id="@+id/story_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/deal_title"
+                android:textAppearance="@android:style/TextAppearance.Large" />
 
-        <TextView
-            android:id="@+id/specifications"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/deal_specifications" />
+            <TextView
+                android:id="@+id/story"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/deal_story" />
 
-        <TextView
-            android:id="@+id/jsonRaw"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
+            <TextView
+                android:id="@+id/specifications"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/deal_specifications" />
 
-    </LinearLayout>
-</ScrollView>
+        </LinearLayout>
+    </ScrollView>
+
+    <com.getbase.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fab_meh"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        fab:fab_icon="@drawable/ic_stat_browser" />
+</FrameLayout>

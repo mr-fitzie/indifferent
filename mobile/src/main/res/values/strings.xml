@@ -22,6 +22,9 @@
     <string name="action_browser">Browser</string>
     <string name="deal_price">$%1$s</string>
     <string name="deal_price_range">$%1$s - $%2$s</string>
+    <string name="deal_price_buy">%1$s BUY IT.</string>
+    <string name="deal_price_soldout">SOLD OUT. (was %1$s)</string>
+    <string name="deal_price_toolate">TOO LATE. (was %1$s)</string>
     <string name="deal_story">Story</string>
     <string name="notify_summary">%1$s: %2$s</string>
 

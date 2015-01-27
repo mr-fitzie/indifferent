@@ -1,6 +1,6 @@
 package com.synthtc.indifferent;
 
-import android.app.NotificationManager;
+import android.app.Notification;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -8,10 +8,11 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.net.Uri;
-import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.support.v4.app.NotificationCompat;
+import android.support.v4.app.NotificationManagerCompat;
 import android.util.Log;
 
 import com.android.volley.Request;
@@ -28,23 +29,24 @@ import com.synthtc.indifferent.util.MehCache;
 import com.synthtc.indifferent.util.VolleySingleton;
 
 import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
 import org.joda.time.Instant;
 import org.json.JSONObject;
+
+import in.uncod.android.bypass.Bypass;
 
 /**
  * Created by Chris on 1/10/2015.
  */
 public class IndifferentReceiver extends BroadcastReceiver {
     public static final String INTENT_MEH = "com.synthtc.indifferent.MEH";
-    public static final int THIRTY_SEC_MILLIS = 30000;
+
     private static final int NOTIFICATION_ID = 1;
-    private NotificationManager mNotificationManager = null;
+    private NotificationManagerCompat mNotificationManager = null;
 
     @Override
-    public void onReceive(final Context context, Intent intent) {
+    public void onReceive(final Context context, final Intent intent) {
         if (mNotificationManager == null) {
-            mNotificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+            mNotificationManager = NotificationManagerCompat.from(context);
         }
         final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
 
@@ -52,12 +54,12 @@ public class IndifferentReceiver extends BroadcastReceiver {
         if (action.equals(Intent.ACTION_BOOT_COMPLETED)) {
             Helper.log(Log.DEBUG, "BOOT COMPLETED");
             if (prefs.getBoolean(SettingsFragment.KEY_ALARM_ENABLE, SettingsFragment.DEFAULT_ALARM_ENABLE)) {
-                Alarm.set(context);
+                Alarm.set(context, false);
             }
         } else if (action.equals(INTENT_MEH)) {
             Helper.log(Log.DEBUG, "alarm triggered");
             final MehCache mehCache = MehCache.getInstance(context);
-            final Instant today = DateTime.now(DateTimeZone.UTC).withTimeAtStartOfDay().toInstant();
+            final Instant today = DateTime.now(Helper.TIME_ZONE).withTimeAtStartOfDay().toInstant();
             Meh meh = mehCache.get(today);
             if (meh != null) {
                 requestImage(context, meh);
@@ -70,15 +72,18 @@ public class IndifferentReceiver extends BroadcastReceiver {
                         Meh meh = gson.fromJson(jsonObject.toString(), Meh.class);
                         Instant instant = mehCache.getInstant(meh);
                         Helper.log(Log.DEBUG, "IndifferentReceiver onResponse " + instant.toString());
-                        if (instant != null && instant == today) {
+                        if (instant != null && instant.equals(today) || intent.hasExtra("from")) {
                             mehCache.put(instant, jsonObject, true);
                             requestImage(context, meh);
                             Helper.log(Log.DEBUG, "VolleyResponse " + meh.getDeal().getId());
+                            Alarm.cancel(context, true);
                         } else {
                             int retryMin = Integer.valueOf(prefs.getString(SettingsFragment.KEY_ALARM_RETRY_MIN, SettingsFragment.DEFAULT_ALARM_RETRY_MIN));
                             Helper.log(Log.DEBUG, "IndifferentReceiver not today (" + today.toString() + ") gonna try again for total of " + retryMin + " min");
                             if (DateTime.now().getMinuteOfHour() < retryMin) {
-                                checkAgain(context);
+                                Alarm.set(context, true);
+                            } else {
+                                Alarm.cancel(context, true);
                             }
                         }
                     }
@@ -87,7 +92,7 @@ public class IndifferentReceiver extends BroadcastReceiver {
                     @Override
                     public void onErrorResponse(VolleyError volleyError) {
                         Helper.log(Log.ERROR, "VolleyError", volleyError);
-                        checkAgain(context);
+                        Alarm.set(context, true);
                     }
                 };
                 JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, url, null, responseListener, responseErrorListener);
@@ -96,20 +101,9 @@ public class IndifferentReceiver extends BroadcastReceiver {
         }
     }
 
-    private void checkAgain(final Context context) {
-        Helper.log(Log.DEBUG, "checkingAgain");
-        Handler handler = new Handler();
-        handler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                context.sendBroadcast(new Intent(INTENT_MEH));
-            }
-        }, THIRTY_SEC_MILLIS);
-    }
-
     private void requestImage(final Context context, final Meh meh) {
         if (mNotificationManager == null) {
-            mNotificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+            mNotificationManager = NotificationManagerCompat.from(context);
         }
 
         ImageLoader.ImageListener imageListener = new ImageLoader.ImageListener() {
@@ -120,7 +114,7 @@ public class IndifferentReceiver extends BroadcastReceiver {
 
             @Override
             public void onErrorResponse(VolleyError volleyError) {
-                Bitmap bitmap = BitmapFactory.decodeResource(context.getResources(), R.drawable.ic_sad_face);
+                Bitmap bitmap = BitmapFactory.decodeResource(context.getResources(), R.drawable.ic_error);
                 createNotification(context, meh, bitmap);
             }
         };
@@ -129,7 +123,7 @@ public class IndifferentReceiver extends BroadcastReceiver {
 
     private void createNotification(Context context, Meh meh, Bitmap bitmap) {
         if (mNotificationManager == null) {
-            mNotificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+            mNotificationManager = NotificationManagerCompat.from(context);
         }
 
         Intent appIntent = new Intent(context, MainActivity.class);
@@ -140,7 +134,41 @@ public class IndifferentReceiver extends BroadcastReceiver {
         Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(meh.getDeal().getUrl()));
         PendingIntent browserPendingIntent = PendingIntent.getActivity(context, 0, browserIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 
+        String title = meh.getDeal().getTitle();
         String summary = context.getString(R.string.notify_summary, meh.getDeal().getItems()[0].getCondition(), meh.getDeal().getPrices(context));
+
+        int resId = R.drawable.ic_stat_meh;
+        String titleLower = title.toLowerCase();
+        if (titleLower.contains("speaker") && titleLower.contains("dock")) {
+            resId = R.drawable.ic_stat_sad;
+        } else if (titleLower.contains("fukubukuro")) {
+            resId = R.drawable.ic_stat_fuku;
+        }
+
+        NotificationCompat.Action browserAction =
+                new NotificationCompat.Action.Builder(R.drawable.ic_stat_browser,
+                        context.getString(R.string.action_browser), browserPendingIntent)
+                        .build();
+
+        Bypass bypass = new Bypass(context);
+        CharSequence features = bypass.markdownToSpannable(meh.getDeal().getFeatures());
+
+        // Create a big text style for the second page
+        NotificationCompat.BigTextStyle secondPageStyle = new NotificationCompat.BigTextStyle();
+        secondPageStyle.setBigContentTitle(context.getString(R.string.deal_features))
+                .bigText(features);
+
+        // Create second page notification
+        Notification secondPageNotification =
+                new NotificationCompat.Builder(context)
+                        .setStyle(secondPageStyle)
+                        .build();
+
+        NotificationCompat.WearableExtender wearableExtender =
+                new NotificationCompat.WearableExtender()
+                        .addPage(secondPageNotification)
+                        .addAction(browserAction)
+                        .setBackground(bitmap);
 
         NotificationCompat.BigPictureStyle style = new NotificationCompat.BigPictureStyle()
                 .bigPicture(bitmap)
@@ -151,17 +179,24 @@ public class IndifferentReceiver extends BroadcastReceiver {
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                 .setPriority(NotificationCompat.PRIORITY_MAX)
                 .setDefaults(NotificationCompat.DEFAULT_ALL)
-                .setSmallIcon(R.drawable.ic_stat_meh)
+                .setSmallIcon(resId)
                 .setLargeIcon(bitmap)
-                .setContentTitle(meh.getDeal().getTitle())
+                .setContentTitle(title)
                 .setContentText(summary)
                 .setAutoCancel(true)
                 .setOnlyAlertOnce(true)
                 .setContentIntent(appPendingIntent)
                 .setFullScreenIntent(appPendingIntent, true)
-                .addAction(R.drawable.ic_stat_meh, context.getString(R.string.app_name), appPendingIntent)
-                .addAction(R.drawable.ic_stat_browser, context.getString(R.string.action_browser), browserPendingIntent)
-                .setStyle(style);
+                .addAction(resId, context.getString(R.string.app_name), appPendingIntent)
+                .addAction(browserAction)
+                .setStyle(style)
+                .extend(wearableExtender);
+
+        if (resId == R.drawable.ic_stat_fuku) {
+            builder.setColor(Color.RED);
+        } else if (meh.getDeal().getTheme() != null && meh.getDeal().getTheme().getAccentColor() != null) {
+            builder.setColor(Color.parseColor(meh.getDeal().getTheme().getAccentColor()));
+        }
 
         mNotificationManager.notify(NOTIFICATION_ID, builder.build());
     }

@@ -12,6 +12,7 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v7.app.ActionBarDrawerToggle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -28,6 +29,7 @@ import com.android.volley.toolbox.NetworkImageView;
 import com.synthtc.indifferent.R;
 import com.synthtc.indifferent.api.Deal;
 import com.synthtc.indifferent.api.Meh;
+import com.synthtc.indifferent.util.Helper;
 import com.synthtc.indifferent.util.MehCache;
 import com.synthtc.indifferent.util.VolleySingleton;
 
@@ -108,11 +110,6 @@ public class NavigationDrawerFragment extends Fragment {
         View rootView = inflater.inflate(R.layout.fragment_navigation_drawer, container, false);
         mDrawerListView = (ListView) rootView.findViewById(android.R.id.list);
 
-        MehCache mehCache = MehCache.getInstance(getActivity());
-
-        mMehs = mehCache.getAll();
-        mMehs.add(null); //Settings
-
         mDrawerListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
@@ -120,19 +117,8 @@ public class NavigationDrawerFragment extends Fragment {
             }
         });
 
-        mDrawerListView.setAdapter(new NavAdapter(
-                getActionBar().getThemedContext(),
-                R.layout.navigation_list_item,
-                mMehs));
-        mDrawerListView.setItemChecked(mCurrentSelectedPosition, true);
+        updateList();
 
-//        Button settings = (Button) rootView.findViewById(R.id.settings);
-//        settings.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View v) {
-//                selectItem(-1);
-//            }
-//        });
         return rootView;
     }
 
@@ -264,7 +250,6 @@ public class NavigationDrawerFragment extends Fragment {
         // If the drawer is open, show the global app actions in the action bar. See also
         // showGlobalContextActionBar, which controls the top-left area of the action bar.
         if (mDrawerLayout != null && isDrawerOpen()) {
-            //inflater.inflate(R.menu.global, menu);
             showGlobalContextActionBar();
         }
         super.onCreateOptionsMenu(menu, inflater);
@@ -275,16 +260,6 @@ public class NavigationDrawerFragment extends Fragment {
         if (mDrawerToggle.onOptionsItemSelected(item)) {
             return true;
         }
-//
-//        if (item.getItemId() == R.id.action_example) {
-//            Intent intent = new Intent(IndifferentReceiver.INTENT_MEH);
-//            getActivity().sendBroadcast(intent);
-//            Toast.makeText(getActivity(), "Example action.", Toast.LENGTH_SHORT).show();
-//            return true;
-//        } else if (item.getItemId() == R.id.action_settings) {
-//            Toast.makeText(getActivity(), "Settings.", Toast.LENGTH_SHORT).show();
-//            Alarm.cancel(getActivity());
-//        }
 
         return super.onOptionsItemSelected(item);
     }
@@ -294,6 +269,7 @@ public class NavigationDrawerFragment extends Fragment {
      * 'context', rather than just what's in the current screen.
      */
     private void showGlobalContextActionBar() {
+        Helper.log(Log.DEBUG, "showGlobalContextActionBar");
         ActionBar actionBar = getActionBar();
         actionBar.setDisplayShowTitleEnabled(true);
         actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_STANDARD);
@@ -302,6 +278,18 @@ public class NavigationDrawerFragment extends Fragment {
 
     private ActionBar getActionBar() {
         return ((ActionBarActivity) getActivity()).getSupportActionBar();
+    }
+
+    public void updateList() {
+        Helper.log(Log.DEBUG, "updateList");
+        MehCache mehCache = MehCache.getInstance(getActivity());
+        mMehs = mehCache.getAll();
+        mMehs.add(null); //Settings
+        mDrawerListView.setAdapter(new NavAdapter(
+                getActionBar().getThemedContext(),
+                R.layout.navigation_list_item,
+                mMehs));
+        selectItem(0);
     }
 
     /**
@@ -337,8 +325,8 @@ public class NavigationDrawerFragment extends Fragment {
 
                 holder = new ViewHolder();
                 holder.icon = (NetworkImageView) convertView.findViewById(android.R.id.icon1);
-                holder.icon.setDefaultImageResId(R.drawable.ic_meh);
-                holder.icon.setErrorImageResId(R.drawable.ic_sad_face);
+                holder.icon.setDefaultImageResId(R.drawable.ic_cached);
+                holder.icon.setErrorImageResId(R.drawable.ic_error);
                 holder.title = (TextView) convertView.findViewById(android.R.id.text1);
                 holder.date = (TextView) convertView.findViewById(android.R.id.text2);
                 convertView.setTag(holder);
@@ -348,7 +336,7 @@ public class NavigationDrawerFragment extends Fragment {
 
             Meh meh = mObjects.get(position);
             if (meh == null) {
-                holder.icon.setDefaultImageResId(R.drawable.ic_settings);
+                holder.icon.setImageResource(R.drawable.ic_settings);
                 holder.title.setText(R.string.action_settings);
                 holder.date.setVisibility(View.GONE);
             } else {
