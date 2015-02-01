@@ -1,7 +1,6 @@
 package com.synthtc.indifferent.util;
 
 import android.content.Context;
-import android.util.Log;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
@@ -54,7 +53,7 @@ public class MehCache {
 
     public boolean put(Instant instant, String json, boolean overwrite) {
         boolean success = false;
-        Helper.log(Log.DEBUG, "put " + instant + " " + overwrite);
+        //Log.d(MainActivity.LOGTAG, "put " + instant + " " + overwrite);
         if (!mCache.containsKey(instant) || mCache.containsKey(instant) && overwrite) {
             Meh meh = mGson.fromJson(json, Meh.class);
             mCache.put(instant, meh);
@@ -64,7 +63,7 @@ public class MehCache {
                 fos.write(json.getBytes());
                 fos.close();
                 success = true;
-                Helper.log(Log.DEBUG, "put success " + filename);
+                //Log.d(MainActivity.LOGTAG, "put success " + filename);
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -76,13 +75,13 @@ public class MehCache {
         String createdAt = null;
         if (meh.getDeal() != null && meh.getDeal().getTopic() != null) {
             createdAt = meh.getDeal().getTopic().getCreatedAt();
-            Helper.log(Log.DEBUG, "using Deal createdAt " + createdAt);
+            //Log.d(MainActivity.LOGTAG, "using Deal createdAt " + createdAt);
         } else if (meh.getPoll() != null && meh.getPoll().getStartDate() != null) {
             createdAt = meh.getPoll().getStartDate();
-            Helper.log(Log.DEBUG, "using Poll startDate " + createdAt);
+            //Log.d(MainActivity.LOGTAG, "using Poll startDate " + createdAt);
         } else if (meh.getVideo() != null && meh.getVideo().getStartDate() != null) {
             createdAt = meh.getVideo().getStartDate();
-            Helper.log(Log.DEBUG, "using Video startDate " + createdAt);
+            //Log.d(MainActivity.LOGTAG, "using Video startDate " + createdAt);
         }
         Instant instant = null;
         if (createdAt != null) {
@@ -95,13 +94,13 @@ public class MehCache {
     public Meh get(Instant instant) {
         Meh meh = null;
         if (mCache.containsKey(instant)) {
-            Helper.log(Log.DEBUG, "get Memory " + instant);
+            //Log.d(MainActivity.LOGTAG, "get Memory " + instant);
             meh = mCache.get(instant);
         } else if (instant.isAfterNow()) {
             // So Sorry Cant peer into the future
-            Helper.log(Log.DEBUG, "get Future " + instant);
+            //Log.d(MainActivity.LOGTAG, "get Future " + instant);
         } else {
-            Helper.log(Log.DEBUG, "get FileSystem " + instant);
+            //Log.d(MainActivity.LOGTAG, "get FileSystem " + instant);
             String filename = instant.toString(mFormatter) + JSON_EXT;
             meh = loadCacheFromFile(filename);
         }
@@ -126,11 +125,11 @@ public class MehCache {
             meh = mGson.fromJson(element, Meh.class);
             Instant instant = getInstant(meh);
             mCache.put(instant, meh);
-            Helper.log(Log.DEBUG, "loadFromFile FileFound " + filename);
+            //Log.d(LOGTAG, "loadFromFile FileFound " + filename);
         } catch (FileNotFoundException e) {
-            Helper.log(Log.DEBUG, "loadFromFile FileNotFound " + filename);
+            //Log.d(LOGTAG, "loadFromFile FileNotFound " + filename);
         } catch (NullPointerException e) {
-            Helper.log(Log.ERROR, "loadFromFile NullPointerException " + filename, e);
+            //Log.e(LOGTAG, "loadFromFile NullPointerException " + filename, e);
         }
         return meh;
     }

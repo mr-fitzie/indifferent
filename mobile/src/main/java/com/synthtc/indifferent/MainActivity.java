@@ -23,6 +23,8 @@ import android.util.Log;
 import android.util.StateSet;
 import android.view.LayoutInflater;
 import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
@@ -34,6 +36,7 @@ import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.getbase.floatingactionbutton.FloatingActionButton;
 import com.google.gson.Gson;
+import com.squareup.picasso.Picasso;
 import com.synthtc.indifferent.api.Deal;
 import com.synthtc.indifferent.api.Meh;
 import com.synthtc.indifferent.ui.ImageFragment;
@@ -108,11 +111,13 @@ public class MainActivity extends ActionBarActivity implements NavigationDrawerF
         if (meh == null) {
             loadFragment(new SettingsFragment());
             mTitle = getString(R.string.action_settings);
-        } else {
+        } else if (meh.getDeal() != null) {
             Instant instant = MehCache.getInstance(this).getInstant(meh);
             loadFragment(DealFragment.newInstance(instant, meh));
+        } else {
+            loadFragment(PlaceholderFragment.newInstance(PlaceholderFragment.ARG_SECTION_ERROR));
         }
-        Helper.log(Log.DEBUG, "onNavigationDrawerItemSelected");
+        //Log.d(LOGTAG, "onNavigationDrawerItemSelected");
     }
 
     private void initialize() {
@@ -126,6 +131,10 @@ public class MainActivity extends ActionBarActivity implements NavigationDrawerF
         if (prefs.getBoolean(SettingsFragment.KEY_ALARM_ENABLE, SettingsFragment.DEFAULT_ALARM_ENABLE)) {
             Alarm.set(this, false);
         }
+
+//        Picasso picasso = Picasso.with(this);
+//        picasso.setLoggingEnabled(true);
+//        picasso.setIndicatorsEnabled(true);
 
         final MehCache mehCache = MehCache.getInstance(this);
 
@@ -144,50 +153,54 @@ public class MainActivity extends ActionBarActivity implements NavigationDrawerF
         }
 
         mToday = DateTime.now(Helper.TIME_ZONE).withTimeAtStartOfDay().toInstant();
-        Helper.log(Log.DEBUG, "today is " + mToday);
+        //Log.d(LOGTAG, "today is " + mToday);
         final Meh meh = mehCache.get(mToday);
-        if (meh != null) {
+        if (meh != null && meh.getDeal() != null) {
             Instant instant = mehCache.getInstant(meh);
             if (instant != null) {
-                Helper.log(Log.DEBUG, "initialize in cache");
+                //Log.d(LOGTAG, "initialize in cache");
                 loadFragment(DealFragment.newInstance(instant, meh));
                 restoreActionBar();
             } else {
                 loadFragment(PlaceholderFragment.newInstance(PlaceholderFragment.ARG_SECTION_ERROR));
             }
         } else {
-            Helper.log(Log.DEBUG, "initialize not in cache");
-            final String url = getString(R.string.api_url, getString(R.string.api_key));
-            final Response.Listener<JSONObject> responseListener = new Response.Listener<JSONObject>() {
-                @Override
-                public void onResponse(JSONObject jsonObject) {
-                    Meh meh = gson.fromJson(jsonObject.toString(), Meh.class);
-                    Instant instant = mehCache.getInstant(meh);
-                    if (instant != null) {
-                        Helper.log(Log.DEBUG, "initialize not in cache pulled down, updating sidebar and frag");
-                        mehCache.put(instant, jsonObject, true);
-                        mNavigationDrawerFragment.updateList();
-                        loadFragment(DealFragment.newInstance(instant, meh));
-                    } else {
-                        loadFragment(PlaceholderFragment.newInstance(PlaceholderFragment.ARG_SECTION_ERROR));
-                    }
-                }
-            };
-            Response.ErrorListener responseErrorListener = new Response.ErrorListener() {
-
-                @Override
-                public void onErrorResponse(VolleyError volleyError) {
-                    loadFragment(PlaceholderFragment.newInstance(PlaceholderFragment.ARG_SECTION_ERROR));
-                    Helper.log(Log.ERROR, "VolleyError", volleyError);
-                }
-            };
-            JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, url, null, responseListener, responseErrorListener);
-            VolleySingleton.getInstance(getApplicationContext()).addToRequestQueue(request);
+            getCurrentMeh(mehCache, gson);
         }
     }
 
+    private void getCurrentMeh(final MehCache mehCache, final Gson gson) {
+        //Log.d(LOGTAG, "initialize not in cache");
+        final String url = getString(R.string.api_url, getString(R.string.api_key));
+        final Response.Listener<JSONObject> responseListener = new Response.Listener<JSONObject>() {
+            @Override
+            public void onResponse(JSONObject jsonObject) {
+                Meh meh = gson.fromJson(jsonObject.toString(), Meh.class);
+                Instant instant = mehCache.getInstant(meh);
+                if (meh.getDeal() != null && instant != null) {
+                    //Log.d(LOGTAG, "initialize not in cache pulled down, updating sidebar and frag");
+                    mehCache.put(instant, jsonObject, true);
+                    mNavigationDrawerFragment.updateList();
+                    loadFragment(DealFragment.newInstance(instant, meh));
+                } else {
+                    loadFragment(PlaceholderFragment.newInstance(PlaceholderFragment.ARG_SECTION_ERROR));
+                }
+            }
+        };
+        Response.ErrorListener responseErrorListener = new Response.ErrorListener() {
+
+            @Override
+            public void onErrorResponse(VolleyError volleyError) {
+                loadFragment(PlaceholderFragment.newInstance(PlaceholderFragment.ARG_SECTION_ERROR));
+                Log.e(LOGTAG, "VolleyError", volleyError);
+            }
+        };
+        JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, url, null, responseListener, responseErrorListener);
+        VolleySingleton.getInstance(getApplicationContext()).addToRequestQueue(request);
+    }
+
     public void restoreActionBar() {
-        Helper.log(Log.DEBUG, "restoreActionBar");
+        //Log.d(LOGTAG, "restoreActionBar");
         ActionBar actionBar = getSupportActionBar();
         actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_STANDARD);
         actionBar.setDisplayShowTitleEnabled(true);
@@ -212,20 +225,20 @@ public class MainActivity extends ActionBarActivity implements NavigationDrawerF
         return super.onCreateOptionsMenu(menu);
     }
 
-//    @Override
-//    public boolean onOptionsItemSelected(MenuItem item) {
-//        // Handle action bar item clicks here. The action bar will
-//        // automatically handle clicks on the Home/Up button, so long
-//        // as you specify a parent activity in AndroidManifest.xml.
-//        int id = item.getItemId();
-//
-//        //noinspection SimplifiableIfStatement
-//        if (id == R.id.action_settings) {
-//            //return true;
-//        }
-//
-//        return super.onOptionsItemSelected(item);
-//    }
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle action bar item clicks here. The action bar will
+        // automatically handle clicks on the Home/Up button, so long
+        // as you specify a parent activity in AndroidManifest.xml.
+        int id = item.getItemId();
+
+        //noinspection SimplifiableIfStatement
+        if (id == R.id.action_refresh) {
+            getCurrentMeh(MehCache.getInstance(this), new Gson());
+        }
+
+        return super.onOptionsItemSelected(item);
+    }
 
     private void loadFragment(Fragment fragment) {
         if (fragment != null) {
@@ -263,11 +276,21 @@ public class MainActivity extends ActionBarActivity implements NavigationDrawerF
             return fragment;
         }
 
+        @Override
+        public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+            inflater.inflate(R.menu.main, menu);
+            super.onCreateOptionsMenu(menu, inflater);
+        }
 
         @Override
         public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-            Helper.log(Log.DEBUG, "DealFragment.onCreateView");
-            Helper.cacheImages(getActivity(), mMeh);
+            //Log.d(LOGTAG, "DealFragment.onCreateView");
+            for (final String url : mMeh.getDeal().getPhotos()) {
+                Picasso.with(getActivity()).load(url).fetch();
+            }
+
+            boolean tooLate = mDealDate.isBefore(mToday);
+            setHasOptionsMenu(!tooLate);
 
             View rootView = inflater.inflate(R.layout.fragment_deal, container, false);
 
@@ -291,7 +314,7 @@ public class MainActivity extends ActionBarActivity implements NavigationDrawerF
             CirclePageIndicator circleIndicator = (CirclePageIndicator) rootView.findViewById(R.id.pager_indicator);
             circleIndicator.setViewPager(mPager);
             circleIndicator.setFillColor(accentColor);
-            circleIndicator.setStrokeColor(textColor);
+            circleIndicator.setStrokeColor(accentColor);
 
             Button price = (Button) rootView.findViewById(R.id.price);
             GradientDrawable pill = (GradientDrawable) price.getBackground();
@@ -313,7 +336,7 @@ public class MainActivity extends ActionBarActivity implements NavigationDrawerF
             });
 
             String prices = deal.getPrices(getActivity());
-            boolean tooLate = mDealDate.isBefore(mToday);
+
             if (deal.getSoldOutAt() != null || tooLate) {
                 price.setTextColor(getResources().getColor(R.color.primary_material_light));
                 price.setText(getString(deal.getSoldOutAt() != null ? R.string.deal_price_soldout : R.string.deal_price_toolate, prices));
@@ -385,7 +408,7 @@ public class MainActivity extends ActionBarActivity implements NavigationDrawerF
             mainActivity.mColor = Color.parseColor(theme.getAccentColor());
             mainActivity.mColorStatus = Helper.getHighlightColor(mainActivity.mColor, theme.getForeground());
             mainActivity.mColorNav = Helper.getHighlightColor(Color.parseColor(theme.getBackgroundColor()), theme.getForeground());
-            Helper.log(Log.DEBUG, "onAttach " + mainActivity.mTitle + " " + mainActivity.mColor + " " + mainActivity.mColorStatus);
+            //Log.d(LOGTAG, "onAttach " + mainActivity.mTitle + " " + mainActivity.mColor + " " + mainActivity.mColorStatus);
         }
 
         private class ImagePagerAdapter extends FragmentStatePagerAdapter {
@@ -442,8 +465,9 @@ public class MainActivity extends ActionBarActivity implements NavigationDrawerF
             if (mSectionNumber < 0) {
                 layoutId = R.layout.fragment_error;
             }
+            setHasOptionsMenu(true);
             View rootView = inflater.inflate(layoutId, container, false);
-            Helper.log(Log.DEBUG, "PlaceholderFragmentonCreateView " + mSectionNumber);
+            //Log.d(LOGTAG, "PlaceholderFragmentonCreateView " + mSectionNumber);
             return rootView;
         }
 
@@ -456,6 +480,12 @@ public class MainActivity extends ActionBarActivity implements NavigationDrawerF
             mainActivity.mColor = getResources().getColor(R.color.primary_material_dark);
             mainActivity.mColorStatus = getResources().getColor(R.color.primary_dark_material_dark);
             mainActivity.mColorNav = getResources().getColor(R.color.primary_dark_material_dark);
+        }
+
+        @Override
+        public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+            inflater.inflate(R.menu.main, menu);
+            super.onCreateOptionsMenu(menu, inflater);
         }
     }
 }

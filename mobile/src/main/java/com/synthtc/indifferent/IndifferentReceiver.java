@@ -9,6 +9,7 @@ import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.preference.PreferenceManager;
 import android.support.v4.app.NotificationCompat;
@@ -18,9 +19,10 @@ import android.util.Log;
 import com.android.volley.Request;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
-import com.android.volley.toolbox.ImageLoader;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.google.gson.Gson;
+import com.squareup.picasso.Picasso;
+import com.squareup.picasso.Target;
 import com.synthtc.indifferent.api.Meh;
 import com.synthtc.indifferent.ui.SettingsFragment;
 import com.synthtc.indifferent.util.Alarm;
@@ -39,7 +41,6 @@ import in.uncod.android.bypass.Bypass;
  */
 public class IndifferentReceiver extends BroadcastReceiver {
     public static final String INTENT_MEH = "com.synthtc.indifferent.MEH";
-
     private static final int NOTIFICATION_ID = 1;
     private NotificationManagerCompat mNotificationManager = null;
 
@@ -52,16 +53,16 @@ public class IndifferentReceiver extends BroadcastReceiver {
 
         String action = intent.getAction();
         if (action.equals(Intent.ACTION_BOOT_COMPLETED)) {
-            Helper.log(Log.DEBUG, "BOOT COMPLETED");
+            //Log.d(MainActivity.LOGTAG, "BOOT COMPLETED");
             if (prefs.getBoolean(SettingsFragment.KEY_ALARM_ENABLE, SettingsFragment.DEFAULT_ALARM_ENABLE)) {
                 Alarm.set(context, false);
             }
         } else if (action.equals(INTENT_MEH)) {
-            Helper.log(Log.DEBUG, "alarm triggered");
+            //Log.d(MainActivity.LOGTAG, "alarm triggered");
             final MehCache mehCache = MehCache.getInstance(context);
             final Instant today = DateTime.now(Helper.TIME_ZONE).withTimeAtStartOfDay().toInstant();
             Meh meh = mehCache.get(today);
-            if (meh != null) {
+            if (meh != null && meh.getDeal() != null) {
                 requestImage(context, meh);
             } else {
                 String url = context.getString(R.string.api_url, context.getString(R.string.api_key));
@@ -71,15 +72,15 @@ public class IndifferentReceiver extends BroadcastReceiver {
                         Gson gson = new Gson();
                         Meh meh = gson.fromJson(jsonObject.toString(), Meh.class);
                         Instant instant = mehCache.getInstant(meh);
-                        Helper.log(Log.DEBUG, "IndifferentReceiver onResponse " + instant.toString());
-                        if (instant != null && instant.equals(today) || intent.hasExtra("from")) {
+                        //Log.d(MainActivity.LOGTAG, "IndifferentReceiver onResponse " + instant.toString());
+                        if (meh.getDeal() != null && instant != null && instant.equals(today) || intent.hasExtra("from")) {
                             mehCache.put(instant, jsonObject, true);
                             requestImage(context, meh);
-                            Helper.log(Log.DEBUG, "VolleyResponse " + meh.getDeal().getId());
+                            //Log.d(MainActivity.LOGTAG, "VolleyResponse " + meh.getDeal().getId());
                             Alarm.cancel(context, true);
                         } else {
                             int retryMin = Integer.valueOf(prefs.getString(SettingsFragment.KEY_ALARM_RETRY_MIN, SettingsFragment.DEFAULT_ALARM_RETRY_MIN));
-                            Helper.log(Log.DEBUG, "IndifferentReceiver not today (" + today.toString() + ") gonna try again for total of " + retryMin + " min");
+                            //Log.d(MainActivity.LOGTAG, "IndifferentReceiver not today (" + today.toString() + ") gonna try again for total of " + retryMin + " min");
                             if (DateTime.now().getMinuteOfHour() < retryMin) {
                                 Alarm.set(context, true);
                             } else {
@@ -91,7 +92,7 @@ public class IndifferentReceiver extends BroadcastReceiver {
                 Response.ErrorListener responseErrorListener = new Response.ErrorListener() {
                     @Override
                     public void onErrorResponse(VolleyError volleyError) {
-                        Helper.log(Log.ERROR, "VolleyError", volleyError);
+                        Log.e(MainActivity.LOGTAG, "VolleyError", volleyError);
                         Alarm.set(context, true);
                     }
                 };
@@ -106,19 +107,12 @@ public class IndifferentReceiver extends BroadcastReceiver {
             mNotificationManager = NotificationManagerCompat.from(context);
         }
 
-        ImageLoader.ImageListener imageListener = new ImageLoader.ImageListener() {
-            @Override
-            public void onResponse(ImageLoader.ImageContainer imageContainer, boolean isImmediate) {
-                createNotification(context, meh, imageContainer.getBitmap());
-            }
-
-            @Override
-            public void onErrorResponse(VolleyError volleyError) {
-                Bitmap bitmap = BitmapFactory.decodeResource(context.getResources(), R.drawable.ic_error);
-                createNotification(context, meh, bitmap);
-            }
-        };
-        VolleySingleton.getInstance(context.getApplicationContext()).getImageLoader().get(meh.getDeal().getPhotos()[0], imageListener);
+        PicassoFutureTarget target = new PicassoFutureTarget(context, meh);
+        Picasso.with(context)
+                .load(meh.getDeal().getPhotos()[0])
+                .placeholder(R.drawable.ic_cached)
+                .error(R.drawable.ic_error)
+                .into(target);
     }
 
     private void createNotification(Context context, Meh meh, Bitmap bitmap) {
@@ -199,5 +193,31 @@ public class IndifferentReceiver extends BroadcastReceiver {
         }
 
         mNotificationManager.notify(NOTIFICATION_ID, builder.build());
+    }
+
+    private class PicassoFutureTarget implements Target {
+        private Context mContext;
+        private Meh mMeh;
+
+        public PicassoFutureTarget(Context context, Meh meh) {
+            mContext = context;
+            mMeh = meh;
+        }
+
+        @Override
+        public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
+            createNotification(mContext, mMeh, bitmap);
+        }
+
+        @Override
+        public void onBitmapFailed(Drawable errorDrawable) {
+            Bitmap bitmap = BitmapFactory.decodeResource(mContext.getResources(), R.drawable.ic_error);
+            createNotification(mContext, mMeh, bitmap);
+        }
+
+        @Override
+        public void onPrepareLoad(Drawable placeHolderDrawable) {
+            // do nothing
+        }
     }
 }

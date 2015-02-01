@@ -12,7 +12,6 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v7.app.ActionBarDrawerToggle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -21,17 +20,15 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 
-import com.android.volley.toolbox.ImageLoader;
-import com.android.volley.toolbox.NetworkImageView;
+import com.squareup.picasso.Picasso;
 import com.synthtc.indifferent.R;
 import com.synthtc.indifferent.api.Deal;
 import com.synthtc.indifferent.api.Meh;
-import com.synthtc.indifferent.util.Helper;
 import com.synthtc.indifferent.util.MehCache;
-import com.synthtc.indifferent.util.VolleySingleton;
 
 import org.joda.time.Instant;
 import org.joda.time.format.DateTimeFormat;
@@ -118,6 +115,14 @@ public class NavigationDrawerFragment extends Fragment {
         });
 
         updateList();
+
+        View settings = rootView.findViewById(R.id.settings);
+        settings.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                selectItem(-1);
+            }
+        });
 
         return rootView;
     }
@@ -269,7 +274,7 @@ public class NavigationDrawerFragment extends Fragment {
      * 'context', rather than just what's in the current screen.
      */
     private void showGlobalContextActionBar() {
-        Helper.log(Log.DEBUG, "showGlobalContextActionBar");
+        //Log.d(MainActivity.LOGTAG, "showGlobalContextActionBar");
         ActionBar actionBar = getActionBar();
         actionBar.setDisplayShowTitleEnabled(true);
         actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_STANDARD);
@@ -281,12 +286,11 @@ public class NavigationDrawerFragment extends Fragment {
     }
 
     public void updateList() {
-        Helper.log(Log.DEBUG, "updateList");
+        //Log.d(MainActivity.LOGTAG, "updateList");
         MehCache mehCache = MehCache.getInstance(getActivity());
         mMehs = mehCache.getAll();
-        mMehs.add(null); //Settings
         mDrawerListView.setAdapter(new NavAdapter(
-                getActionBar().getThemedContext(),
+                getActivity(),
                 R.layout.navigation_list_item,
                 mMehs));
         selectItem(0);
@@ -306,14 +310,12 @@ public class NavigationDrawerFragment extends Fragment {
         private Context mContext;
         private List<Meh> mObjects;
         private int mResourceId;
-        private ImageLoader mImageLoader;
 
         public NavAdapter(Context context, int resource, List<Meh> objects) {
             super(context, resource, objects);
             mContext = context;
             mObjects = objects;
             mResourceId = resource;
-            mImageLoader = VolleySingleton.getInstance(context.getApplicationContext()).getImageLoader();
         }
 
         @Override
@@ -324,9 +326,7 @@ public class NavigationDrawerFragment extends Fragment {
                 convertView = inflater.inflate(mResourceId, parent, false);
 
                 holder = new ViewHolder();
-                holder.icon = (NetworkImageView) convertView.findViewById(android.R.id.icon1);
-                holder.icon.setDefaultImageResId(R.drawable.ic_cached);
-                holder.icon.setErrorImageResId(R.drawable.ic_error);
+                holder.icon = (ImageView) convertView.findViewById(android.R.id.icon1);
                 holder.title = (TextView) convertView.findViewById(android.R.id.text1);
                 holder.date = (TextView) convertView.findViewById(android.R.id.text2);
                 convertView.setTag(holder);
@@ -335,31 +335,29 @@ public class NavigationDrawerFragment extends Fragment {
             }
 
             Meh meh = mObjects.get(position);
-            if (meh == null) {
-                holder.icon.setImageResource(R.drawable.ic_settings);
-                holder.title.setText(R.string.action_settings);
-                holder.date.setVisibility(View.GONE);
+            Instant instant = MehCache.getInstance(mContext).getInstant(meh);
+            Deal deal = meh.getDeal();
+            if (deal != null) {
+                holder.title.setText(deal.getTitle());
+                if (deal.getPhotos() != null && deal.getPhotos().length > 0) {
+                    Picasso.with(getContext())
+                            .load(deal.getPhotos()[0])
+                            .placeholder(R.drawable.ic_cached)
+                            .error(R.drawable.ic_error)
+                            .into(holder.icon);
+                }
+            }
+            if (instant != null) {
+                holder.date.setText(instant.toString(DateTimeFormat.mediumDate()));
+                holder.date.setVisibility(View.VISIBLE);
             } else {
-                Instant instant = MehCache.getInstance(mContext).getInstant(meh);
-                Deal deal = meh.getDeal();
-                if (deal != null) {
-                    holder.title.setText(deal.getTitle());
-                    if (deal.getPhotos() != null && deal.getPhotos().length > 0) {
-                        holder.icon.setImageUrl(deal.getPhotos()[0], mImageLoader);
-                    }
-                }
-                if (instant != null) {
-                    holder.date.setText(instant.toString(DateTimeFormat.mediumDate()));
-                    holder.date.setVisibility(View.VISIBLE);
-                } else {
-                    holder.date.setVisibility(View.GONE);
-                }
+                holder.date.setVisibility(View.GONE);
             }
             return convertView;
         }
 
         private static class ViewHolder {
-            NetworkImageView icon;
+            ImageView icon;
             TextView title;
             TextView date;
         }

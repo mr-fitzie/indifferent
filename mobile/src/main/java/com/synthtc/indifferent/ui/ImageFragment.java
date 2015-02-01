@@ -5,11 +5,10 @@ import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 
-import com.android.volley.toolbox.ImageLoader;
-import com.android.volley.toolbox.NetworkImageView;
+import com.squareup.picasso.Picasso;
 import com.synthtc.indifferent.R;
-import com.synthtc.indifferent.util.VolleySingleton;
 
 /**
  * This fragment will populate the children of the ViewPager from {@link com.synthtc.indifferent.MainActivity.DealFragment}.
@@ -17,7 +16,7 @@ import com.synthtc.indifferent.util.VolleySingleton;
 public class ImageFragment extends Fragment {
     private static final String IMAGE_DATA_EXTRA = "extra_image_data";
     private String mImageUrl;
-    private NetworkImageView mImageView;
+    private ImageView mImageView;
 
     /**
      * Empty constructor as per the Fragment documentation
@@ -53,17 +52,12 @@ public class ImageFragment extends Fragment {
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        mImageView = new NetworkImageView(getActivity());
-        mImageView.setDefaultImageResId(R.drawable.ic_cached);
-        mImageView.setErrorImageResId(R.drawable.ic_error);
-
-        // Get the ImageLoader through your singleton class.
-        ImageLoader mImageLoader = VolleySingleton.getInstance(getActivity().getApplicationContext()).getImageLoader();
-
-        // Set the URL of the image that should be loaded into this view, and
-        // specify the ImageLoader that will be used to make the request.
-        mImageView.setImageUrl(mImageUrl, mImageLoader);
-
+        mImageView = new ImageView(getActivity());
+        Picasso.with(getActivity())
+                .load(mImageUrl)
+                .placeholder(R.drawable.ic_cached)
+                .error(R.drawable.ic_error)
+                .into(mImageView);
         return mImageView;
     }
 

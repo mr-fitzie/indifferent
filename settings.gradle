@@ -1,2 +1,2 @@
-include ':mobile', ':wear', ':bypass'
+include ':mobile', ':bypass'
 project(':bypass').projectDir = new File('bypass/platform/android/library')
