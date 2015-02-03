@@ -402,13 +402,17 @@ public class MainActivity extends ActionBarActivity implements NavigationDrawerF
         @Override
         public void onAttach(Activity activity) {
             super.onAttach(activity);
-            MainActivity mainActivity = (MainActivity) activity;
-            mainActivity.mTitle = mMeh.getDeal().getTitle();
-            Deal.Theme theme = mMeh.getDeal().getTheme();
-            mainActivity.mColor = Color.parseColor(theme.getAccentColor());
-            mainActivity.mColorStatus = Helper.getHighlightColor(mainActivity.mColor, theme.getForeground());
-            mainActivity.mColorNav = Helper.getHighlightColor(Color.parseColor(theme.getBackgroundColor()), theme.getForeground());
-            //Log.d(LOGTAG, "onAttach " + mainActivity.mTitle + " " + mainActivity.mColor + " " + mainActivity.mColorStatus);
+            if (mMeh != null && mMeh.getDeal() != null) {
+                MainActivity mainActivity = (MainActivity) activity;
+                mainActivity.mTitle = mMeh.getDeal().getTitle();
+                Deal.Theme theme = mMeh.getDeal().getTheme();
+                mainActivity.mColor = Color.parseColor(theme.getAccentColor());
+                mainActivity.mColorStatus = Helper.getHighlightColor(mainActivity.mColor, theme.getForeground());
+                mainActivity.mColorNav = Helper.getHighlightColor(Color.parseColor(theme.getBackgroundColor()), theme.getForeground());
+                //Log.d(LOGTAG, "onAttach " + mainActivity.mTitle + " " + mainActivity.mColor + " " + mainActivity.mColorStatus);
+            } else {
+                Log.e(LOGTAG, "onAttach meh was null");
+            }
         }
 
         private class ImagePagerAdapter extends FragmentStatePagerAdapter {
