@@ -28,6 +28,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.android.volley.Request;
@@ -132,9 +133,11 @@ public class MainActivity extends ActionBarActivity implements NavigationDrawerF
             Alarm.set(this, false);
         }
 
-//        Picasso picasso = Picasso.with(this);
-//        picasso.setLoggingEnabled(true);
-//        picasso.setIndicatorsEnabled(true);
+        if (BuildConfig.DEBUG) {
+            Picasso picasso = Picasso.with(this);
+            //picasso.setLoggingEnabled(true);
+            picasso.setIndicatorsEnabled(true);
+        }
 
         final MehCache mehCache = MehCache.getInstance(this);
 
@@ -180,7 +183,7 @@ public class MainActivity extends ActionBarActivity implements NavigationDrawerF
                 if (meh.getDeal() != null && instant != null) {
                     //Log.d(LOGTAG, "initialize not in cache pulled down, updating sidebar and frag");
                     mehCache.put(instant, jsonObject, true);
-                    mNavigationDrawerFragment.updateList();
+                    mNavigationDrawerFragment.updateList(true);
                     loadFragment(DealFragment.newInstance(instant, meh));
                 } else {
                     loadFragment(PlaceholderFragment.newInstance(PlaceholderFragment.ARG_SECTION_ERROR));
@@ -283,8 +286,14 @@ public class MainActivity extends ActionBarActivity implements NavigationDrawerF
         }
 
         @Override
-        public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-            //Log.d(LOGTAG, "DealFragment.onCreateView");
+        public void onSaveInstanceState(Bundle outState) {
+            super.onSaveInstanceState(outState);
+            outState.putInt("item", mPager.getCurrentItem());
+        }
+
+        @Override
+        public View onCreateView(LayoutInflater inflater, ViewGroup container, final Bundle savedInstanceState) {
+            Log.d(LOGTAG, "DealFragment.onCreateView");
             for (final String url : mMeh.getDeal().getPhotos()) {
                 Picasso.with(getActivity()).load(url).fetch();
             }
@@ -304,21 +313,26 @@ public class MainActivity extends ActionBarActivity implements NavigationDrawerF
             int textColor = Helper.getForegroundColor(getActivity(), backgroundColor);
             int highlightColor = Helper.getHighlightColor(accentColor, theme.getForeground());
 
+            TextView title = (TextView) rootView.findViewById(R.id.title);
+
             // Set up ViewPager and backing adapter
             mAdapter = new ImagePagerAdapter(getActivity().getSupportFragmentManager(), mMeh.getDeal().getPhotos().length);
             mPager = (ViewPager) rootView.findViewById(R.id.pager);
-            mPager.setAdapter(mAdapter);
-            mPager.setPageMargin((int) getResources().getDimension(R.dimen.horizontal_page_margin));
-            mPager.setOffscreenPageLimit(2);
 
-            CirclePageIndicator circleIndicator = (CirclePageIndicator) rootView.findViewById(R.id.pager_indicator);
-            circleIndicator.setViewPager(mPager);
+            int measureSpec = View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED);
+            title.measure(measureSpec, measureSpec);
+            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(title.getWidth(), title.getWidth());
+            //mPager.setLayoutParams(params);
+            final View parent = (View) mPager.getParent();
+            Log.d("BLAH5", parent.getWidth() + " " + parent.getMeasuredWidth() + " " + parent.getHeight() + " " + parent.getMeasuredHeight());
+
+            final CirclePageIndicator circleIndicator = (CirclePageIndicator) rootView.findViewById(R.id.pager_indicator);
             circleIndicator.setFillColor(accentColor);
             circleIndicator.setStrokeColor(accentColor);
 
             Button price = (Button) rootView.findViewById(R.id.price);
             GradientDrawable pill = (GradientDrawable) price.getBackground();
-            TextView title = (TextView) rootView.findViewById(R.id.title);
+
             TextView features = (TextView) rootView.findViewById(R.id.features);
             TextView storyTitle = (TextView) rootView.findViewById(R.id.story_title);
             TextView storyBody = (TextView) rootView.findViewById(R.id.story);
@@ -375,6 +389,8 @@ public class MainActivity extends ActionBarActivity implements NavigationDrawerF
             CharSequence markDown = bypass.markdownToSpannable(deal.getFeatures());
             features.setText(markDown);
             features.setTextColor(textColor);
+            features.setMovementMethod(LinkMovementMethod.getInstance());
+            features.setLinkTextColor(accentColor);
 
             if (story != null) {
                 storyTitle.setText(deal.getStory().getTitle());
@@ -396,6 +412,19 @@ public class MainActivity extends ActionBarActivity implements NavigationDrawerF
             specifications.setLinkTextColor(accentColor);
 
             rootView.setBackgroundColor(backgroundColor);
+            rootView.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    if (parent.getWidth() != 0) {
+                        mPager.setAdapter(mAdapter);
+                        circleIndicator.setViewPager(mPager);
+                        if (savedInstanceState != null) {
+                            mPager.setCurrentItem(savedInstanceState.getInt("item"));
+                        }
+                    }
+                    Log.d("BLAH5", parent.getWidth() + " " + parent.getMeasuredWidth() + " " + mPager.getHeight() + " " + mPager.getMeasuredHeight());
+                }
+            }, 500);
             return rootView;
         }
 

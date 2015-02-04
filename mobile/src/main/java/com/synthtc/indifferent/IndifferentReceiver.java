@@ -110,6 +110,8 @@ public class IndifferentReceiver extends BroadcastReceiver {
         PicassoFutureTarget target = new PicassoFutureTarget(context, meh);
         Picasso.with(context)
                 .load(meh.getDeal().getPhotos()[0])
+                .resize(500, 500)
+                .centerCrop()
                 .placeholder(R.drawable.ic_cached)
                 .error(R.drawable.ic_error)
                 .into(target);

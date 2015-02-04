@@ -114,7 +114,7 @@ public class NavigationDrawerFragment extends Fragment {
             }
         });
 
-        updateList();
+        updateList(false);
 
         View settings = rootView.findViewById(R.id.settings);
         settings.setOnClickListener(new View.OnClickListener() {
@@ -285,7 +285,7 @@ public class NavigationDrawerFragment extends Fragment {
         return ((ActionBarActivity) getActivity()).getSupportActionBar();
     }
 
-    public void updateList() {
+    public void updateList(boolean selectFirst) {
         //Log.d(MainActivity.LOGTAG, "updateList");
         MehCache mehCache = MehCache.getInstance(getActivity());
         mMehs = mehCache.getAll();
@@ -293,7 +293,9 @@ public class NavigationDrawerFragment extends Fragment {
                 getActivity(),
                 R.layout.navigation_list_item,
                 mMehs));
-        selectItem(0);
+        if (selectFirst) {
+            selectItem(0);
+        }
     }
 
     /**
@@ -342,6 +344,8 @@ public class NavigationDrawerFragment extends Fragment {
                 if (deal.getPhotos() != null && deal.getPhotos().length > 0) {
                     Picasso.with(getContext())
                             .load(deal.getPhotos()[0])
+                            .resizeDimen(R.dimen.nav_icon, R.dimen.nav_icon)
+                            .centerCrop()
                             .placeholder(R.drawable.ic_cached)
                             .error(R.drawable.ic_error)
                             .into(holder.icon);

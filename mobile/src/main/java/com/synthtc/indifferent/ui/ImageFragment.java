@@ -1,11 +1,12 @@
 package com.synthtc.indifferent.ui;
 
+import android.content.res.Configuration;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageView;
 
 import com.squareup.picasso.Picasso;
 import com.synthtc.indifferent.R;
@@ -16,7 +17,7 @@ import com.synthtc.indifferent.R;
 public class ImageFragment extends Fragment {
     private static final String IMAGE_DATA_EXTRA = "extra_image_data";
     private String mImageUrl;
-    private ImageView mImageView;
+    private SquareImageView mImageView;
 
     /**
      * Empty constructor as per the Fragment documentation
@@ -32,11 +33,9 @@ public class ImageFragment extends Fragment {
      */
     public static ImageFragment newInstance(String imageUrl) {
         final ImageFragment f = new ImageFragment();
-
         final Bundle args = new Bundle();
         args.putString(IMAGE_DATA_EXTRA, imageUrl);
         f.setArguments(args);
-
         return f;
     }
 
@@ -52,18 +51,27 @@ public class ImageFragment extends Fragment {
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        mImageView = new ImageView(getActivity());
-        Picasso.with(getActivity())
-                .load(mImageUrl)
-                .placeholder(R.drawable.ic_cached)
-                .error(R.drawable.ic_error)
-                .into(mImageView);
+        mImageView = (SquareImageView) inflater.inflate(R.layout.fragment_image, container, false);
+        int dimen = 0;
+        if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE) {
+            Log.d("BLAH", "LANDSCAPE");
+            dimen = container.getMeasuredHeight();
+        } else {
+            Log.d("BLAH", "PORTRAIT");
+            dimen = container.getMeasuredWidth();
+        }
+        if (dimen != 0) {
+            Picasso.with(getActivity())
+                    .load(mImageUrl)
+                    .resize(dimen, dimen)
+                    .centerCrop()
+                    .placeholder(R.drawable.ic_cached)
+                    .error(R.drawable.ic_error)
+                    .into(mImageView);
+        }
+        Log.d("BLAH", mImageUrl);
+        Log.d("BLAH", dimen + " " + container.getMeasuredHeight() + " " + container.getHeight() + " " + container.getMeasuredWidth() + " " + container.getWidth());
         return mImageView;
-    }
-
-    @Override
-    public void onActivityCreated(Bundle savedInstanceState) {
-        super.onActivityCreated(savedInstanceState);
     }
 
     @Override
