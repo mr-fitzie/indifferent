@@ -1,4 +1,4 @@
-package com.synthtc.indifferent.util;
+package com.synthtc.indifferent.preference;
 
 import android.content.Context;
 import android.preference.Preference;

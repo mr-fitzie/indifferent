@@ -1,6 +1,23 @@
+/**
+ * Copyright 2015 SYNTHTC
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+ http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+ */
+
 package com.synthtc.indifferent.util;
 
 import android.content.Context;
+import android.widget.BaseAdapter;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
@@ -9,6 +26,7 @@ import com.synthtc.indifferent.api.Meh;
 
 import org.joda.time.DateTime;
 import org.joda.time.Instant;
+import org.joda.time.Minutes;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 import org.json.JSONObject;
@@ -72,6 +90,10 @@ public class MehCache {
     }
 
     public Instant getInstant(Meh meh) {
+        return getInstant(meh, Minutes.ONE);
+    }
+
+    public Instant getInstant(Meh meh, Minutes minutesWithin) {
         String createdAt = null;
         if (meh.getDeal() != null && meh.getDeal().getTopic() != null) {
             createdAt = meh.getDeal().getTopic().getCreatedAt();
@@ -85,8 +107,13 @@ public class MehCache {
         }
         Instant instant = null;
         if (createdAt != null) {
-            DateTime dateTime = DateTime.parse(createdAt);
-            instant = dateTime.withZone(Helper.TIME_ZONE).withTimeAtStartOfDay().toInstant();
+            DateTime createdTime = DateTime.parse(createdAt);
+            DateTime ideal = new DateTime().withDate(createdTime.getYear(), createdTime.getMonthOfYear(), createdTime.getDayOfMonth()).withZone(Helper.TIME_ZONE).withTimeAtStartOfDay();
+            if (minutesWithin != null && Minutes.minutesBetween(createdTime.toInstant(), ideal).isLessThan(minutesWithin)) {
+                instant = ideal.toInstant();
+            } else {
+                instant = createdTime.withZone(Helper.TIME_ZONE).withTimeAtStartOfDay().toInstant();
+            }
         }
         return instant;
     }
@@ -126,10 +153,8 @@ public class MehCache {
             Instant instant = getInstant(meh);
             mCache.put(instant, meh);
             //Log.d(LOGTAG, "loadFromFile FileFound " + filename);
-        } catch (FileNotFoundException e) {
+        } catch (FileNotFoundException | NullPointerException e) {
             //Log.d(LOGTAG, "loadFromFile FileNotFound " + filename);
-        } catch (NullPointerException e) {
-            //Log.e(LOGTAG, "loadFromFile NullPointerException " + filename, e);
         }
         return meh;
     }
@@ -148,5 +173,15 @@ public class MehCache {
             mehValues.add(mCache.get(key));
         }
         return mehValues;
+    }
+
+    public void clear() {
+        String[] list = mContext.fileList();
+        for (String file : list) {
+            if (file.endsWith(JSON_EXT)) {
+                mContext.deleteFile(file);
+            }
+        }
+        mCache.clear();
     }
 }

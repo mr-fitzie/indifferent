@@ -4,6 +4,7 @@
     <string name="app_name">Indifferent</string>
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>
+    <string name="action_browser">Browser</string>
     <string name="action_refresh">Refresh</string>
     <string name="action_settings">Settings</string>
     <string name="url">http://meh.com</string>
@@ -13,14 +14,14 @@
     <string name="deal_features">Features</string>
     <string name="deal_specifications">Specifications</string>
     <string name="deal_fukubukuro">Fukubukuro</string>
-    <string name="error_oops">Oops</string>
-    <string name="action_browser">Browser</string>
+    <string name="deals">Deals</string>
     <string name="deal_price">$%1$s</string>
     <string name="deal_price_range">$%1$s - $%2$s</string>
     <string name="deal_price_buy">%1$s BUY IT.</string>
     <string name="deal_price_soldout">SOLD OUT. (was %1$s)</string>
     <string name="deal_price_toolate">TOO LATE. (was %1$s)</string>
     <string name="deal_story">Story</string>
+    <string name="error_oops">Oops</string>
     <string name="notify_summary">%1$s: %2$s</string>
 
     <string name="pref_alarm">Alarm / Notification</string>
@@ -43,5 +44,8 @@
         <item>30</item>
     </string-array>
     <string name="pref_alarm_test_title">Test Alarm Notification</string>
-    <string name="deals">Deals</string>
+
+    <string name="pref_cache">Cache</string>
+    <string name="pref_cache_title">Clear Cache</string>
+    <string name="pref_cache_summary">Clear all cached images and deals</string>
 </resources>

@@ -1,9 +1,24 @@
+/**
+ * Copyright 2015 SYNTHTC
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+ http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+ */
+
 package com.synthtc.indifferent.ui;
 
 import android.content.res.Configuration;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -16,6 +31,7 @@ import com.synthtc.indifferent.R;
  */
 public class ImageFragment extends Fragment {
     private static final String IMAGE_DATA_EXTRA = "extra_image_data";
+    private final String LOGTAG = this.getClass().getSimpleName();
     private String mImageUrl;
     private SquareImageView mImageView;
 
@@ -52,15 +68,16 @@ public class ImageFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         mImageView = (SquareImageView) inflater.inflate(R.layout.fragment_image, container, false);
-        int dimen = 0;
+        int dimen;
         if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE) {
-            Log.d("BLAH", "LANDSCAPE");
+            //Log.d(LOGTAG, "LANDSCAPE");
             dimen = container.getMeasuredHeight();
         } else {
-            Log.d("BLAH", "PORTRAIT");
+            //Log.d(LOGTAG, "PORTRAIT");
             dimen = container.getMeasuredWidth();
         }
         if (dimen != 0) {
+            //Log.d(LOGTAG, mImageUrl);
             Picasso.with(getActivity())
                     .load(mImageUrl)
                     .resize(dimen, dimen)
@@ -69,8 +86,7 @@ public class ImageFragment extends Fragment {
                     .error(R.drawable.ic_error)
                     .into(mImageView);
         }
-        Log.d("BLAH", mImageUrl);
-        Log.d("BLAH", dimen + " " + container.getMeasuredHeight() + " " + container.getHeight() + " " + container.getMeasuredWidth() + " " + container.getWidth());
+        //Log.d(LOGTAG, dimen + " " + container.getMeasuredHeight() + " " + container.getHeight() + " " + container.getMeasuredWidth() + " " + container.getWidth());
         return mImageView;
     }
 

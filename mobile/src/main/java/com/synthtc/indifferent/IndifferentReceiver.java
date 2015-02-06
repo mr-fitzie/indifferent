@@ -1,3 +1,18 @@
+/**
+ * Copyright 2015 SYNTHTC
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+ http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+ */
 package com.synthtc.indifferent;
 
 import android.app.Notification;
@@ -32,6 +47,7 @@ import com.synthtc.indifferent.util.VolleySingleton;
 
 import org.joda.time.DateTime;
 import org.joda.time.Instant;
+import org.joda.time.Minutes;
 import org.json.JSONObject;
 
 import in.uncod.android.bypass.Bypass;
@@ -72,15 +88,15 @@ public class IndifferentReceiver extends BroadcastReceiver {
                         Gson gson = new Gson();
                         Meh meh = gson.fromJson(jsonObject.toString(), Meh.class);
                         Instant instant = mehCache.getInstant(meh);
-                        //Log.d(MainActivity.LOGTAG, "IndifferentReceiver onResponse " + instant.toString());
+                        Log.d(MainActivity.LOGTAG, "IndifferentReceiver onResponse " + instant.toString());
                         if (meh.getDeal() != null && instant != null && instant.equals(today) || intent.hasExtra("from")) {
                             mehCache.put(instant, jsonObject, true);
                             requestImage(context, meh);
-                            //Log.d(MainActivity.LOGTAG, "VolleyResponse " + meh.getDeal().getId());
+                            Log.d(MainActivity.LOGTAG, "VolleyResponse " + meh.getDeal().getId());
                             Alarm.cancel(context, true);
                         } else {
                             int retryMin = Integer.valueOf(prefs.getString(SettingsFragment.KEY_ALARM_RETRY_MIN, SettingsFragment.DEFAULT_ALARM_RETRY_MIN));
-                            //Log.d(MainActivity.LOGTAG, "IndifferentReceiver not today (" + today.toString() + ") gonna try again for total of " + retryMin + " min");
+                            Log.d(MainActivity.LOGTAG, "IndifferentReceiver not today (" + today.toString() + ") gonna try again for total of " + retryMin + " min");
                             if (DateTime.now().getMinuteOfHour() < retryMin) {
                                 Alarm.set(context, true);
                             } else {
@@ -106,14 +122,12 @@ public class IndifferentReceiver extends BroadcastReceiver {
         if (mNotificationManager == null) {
             mNotificationManager = NotificationManagerCompat.from(context);
         }
-
+        Log.d(MainActivity.LOGTAG, "requestImage");
         PicassoFutureTarget target = new PicassoFutureTarget(context, meh);
         Picasso.with(context)
                 .load(meh.getDeal().getPhotos()[0])
                 .resize(500, 500)
                 .centerCrop()
-                .placeholder(R.drawable.ic_cached)
-                .error(R.drawable.ic_error)
                 .into(target);
     }
 

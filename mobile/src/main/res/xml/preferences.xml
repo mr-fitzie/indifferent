@@ -19,7 +19,7 @@
             android:positiveButtonText="@null"
             android:summary="@string/pref_alarm_retry_summary"
             android:title="@string/pref_alarm_retry_title" />
-        <com.synthtc.indifferent.util.BroadcastPreference
+        <com.synthtc.indifferent.preference.BroadcastPreference
             android:icon="@drawable/ic_notifications"
             android:key="pref_alarm_test"
             android:title="@string/pref_alarm_test_title">
@@ -28,6 +28,17 @@
                     android:name="from"
                     android:value="settings" />
             </intent>
-        </com.synthtc.indifferent.util.BroadcastPreference>
+        </com.synthtc.indifferent.preference.BroadcastPreference>
     </PreferenceCategory>
+    <PreferenceCategory
+        android:key="pref_cache"
+        android:title="@string/pref_cache">
+        <com.synthtc.indifferent.preference.ClearCacheDialogPreference
+            android:dialogMessage="@string/pref_cache_summary"
+            android:icon="@drawable/ic_cached_24dp"
+            android:key="pref_cache_clear"
+            android:summary="@string/pref_cache_summary"
+            android:title="@string/pref_cache_title" />
+    </PreferenceCategory>
+
 </PreferenceScreen>

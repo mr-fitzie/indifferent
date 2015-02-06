@@ -24,7 +24,6 @@ public class SquareViewPager extends ViewPager {
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
-        Log.d("BLAH3", mOrientation + " " + getMeasuredWidth() + " " + getMeasuredHeight());
         setMeasuredDimension(getMeasuredWidth(), getMeasuredWidth());
     }
 }

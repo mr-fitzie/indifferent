@@ -13,7 +13,7 @@
 
     <dimen name="horizontal_page_margin">64dp</dimen>
     <dimen name="stroke_width">1dp</dimen>
-    <dimen name="image_min_height">200dp</dimen>
+    <dimen name="viewpager_size">200dp</dimen>
     <dimen name="buy_elevation">2dp</dimen>
     <dimen name="keyline_1">16dp</dimen>
     <dimen name="keyline_2">8dp</dimen>
