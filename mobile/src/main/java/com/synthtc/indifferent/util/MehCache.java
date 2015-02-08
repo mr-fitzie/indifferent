@@ -108,7 +108,10 @@ public class MehCache {
         Instant instant = null;
         if (createdAt != null) {
             DateTime createdTime = DateTime.parse(createdAt);
-            DateTime ideal = new DateTime().withDate(createdTime.getYear(), createdTime.getMonthOfYear(), createdTime.getDayOfMonth()).withZone(Helper.TIME_ZONE).withTimeAtStartOfDay();
+            DateTime ideal = new DateTime(Helper.TIME_ZONE)
+                    .withDate(createdTime.getYear(), createdTime.getMonthOfYear(), createdTime.getDayOfMonth())
+                    .withTime(0,0,0,0)
+                    .withTimeAtStartOfDay();
             if (minutesWithin != null && Minutes.minutesBetween(createdTime.toInstant(), ideal).isLessThan(minutesWithin)) {
                 instant = ideal.toInstant();
             } else {
