@@ -3,7 +3,7 @@ ext.projBuildToolsVersion = "21.1.2"
 ext.projMinSdkVersion = 14
 ext.projTargetSdkVersion = 21
 ext.projVersionCode = 1
-ext.projVersionName = "0.1"
+ext.projVersionName = "0.5"
 
 buildscript {
     repositories {

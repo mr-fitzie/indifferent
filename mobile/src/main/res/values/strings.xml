@@ -48,4 +48,9 @@
     <string name="pref_cache">Cache</string>
     <string name="pref_cache_title">Clear Cache</string>
     <string name="pref_cache_summary">Clear all cached images and deals</string>
+
+    <string-array name="sad_words">
+        <item>speaker</item>
+        <item>dock</item>
+    </string-array>
 </resources>

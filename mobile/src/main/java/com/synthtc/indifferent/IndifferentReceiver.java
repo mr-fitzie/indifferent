@@ -24,8 +24,8 @@ import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
-import android.graphics.drawable.Drawable;
 import android.net.Uri;
+import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.NotificationManagerCompat;
@@ -37,7 +37,6 @@ import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.google.gson.Gson;
 import com.squareup.picasso.Picasso;
-import com.squareup.picasso.Target;
 import com.synthtc.indifferent.api.Meh;
 import com.synthtc.indifferent.ui.SettingsFragment;
 import com.synthtc.indifferent.util.Alarm;
@@ -47,8 +46,10 @@ import com.synthtc.indifferent.util.VolleySingleton;
 
 import org.joda.time.DateTime;
 import org.joda.time.Instant;
-import org.joda.time.Minutes;
 import org.json.JSONObject;
+
+import java.io.IOException;
+import java.util.Locale;
 
 import in.uncod.android.bypass.Bypass;
 
@@ -65,16 +66,19 @@ public class IndifferentReceiver extends BroadcastReceiver {
         if (mNotificationManager == null) {
             mNotificationManager = NotificationManagerCompat.from(context);
         }
+
         final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
 
         String action = intent.getAction();
         if (action.equals(Intent.ACTION_BOOT_COMPLETED)) {
             //Log.d(MainActivity.LOGTAG, "BOOT COMPLETED");
+            Helper.log(Log.DEBUG, "BOOT COMPLETED");
             if (prefs.getBoolean(SettingsFragment.KEY_ALARM_ENABLE, SettingsFragment.DEFAULT_ALARM_ENABLE)) {
                 Alarm.set(context, false);
             }
         } else if (action.equals(INTENT_MEH)) {
             //Log.d(MainActivity.LOGTAG, "alarm triggered");
+            Helper.log(Log.DEBUG, "alarm triggered");
             final MehCache mehCache = MehCache.getInstance(context);
             final Instant today = DateTime.now(Helper.TIME_ZONE).withTimeAtStartOfDay().toInstant();
             Meh meh = mehCache.get(today);
@@ -88,15 +92,18 @@ public class IndifferentReceiver extends BroadcastReceiver {
                         Gson gson = new Gson();
                         Meh meh = gson.fromJson(jsonObject.toString(), Meh.class);
                         Instant instant = mehCache.getInstant(meh);
-                        Log.d(MainActivity.LOGTAG, "IndifferentReceiver onResponse " + instant.toString());
+                        //Log.d(MainActivity.LOGTAG, "IndifferentReceiver onResponse " + instant.toString());
+                        Helper.log(Log.DEBUG, "IndifferentReceiver onResponse " + instant.toString());
                         if (meh.getDeal() != null && instant != null && instant.equals(today) || intent.hasExtra("from")) {
                             mehCache.put(instant, jsonObject, true);
                             requestImage(context, meh);
-                            Log.d(MainActivity.LOGTAG, "VolleyResponse " + meh.getDeal().getId());
+                            //Log.d(MainActivity.LOGTAG, "VolleyResponse " + meh.getDeal().getId());
+                            Helper.log(Log.DEBUG, "VolleyResponse " + meh.getDeal().getId());
                             Alarm.cancel(context, true);
                         } else {
                             int retryMin = Integer.valueOf(prefs.getString(SettingsFragment.KEY_ALARM_RETRY_MIN, SettingsFragment.DEFAULT_ALARM_RETRY_MIN));
-                            Log.d(MainActivity.LOGTAG, "IndifferentReceiver not today (" + today.toString() + ") gonna try again for total of " + retryMin + " min");
+                            //Log.d(MainActivity.LOGTAG, "IndifferentReceiver not today (" + today.toString() + ") gonna try again for total of " + retryMin + " min");
+                            Helper.log(Log.DEBUG, "IndifferentReceiver not today (" + today.toString() + ") gonna try again for total of " + retryMin + " min");
                             if (DateTime.now().getMinuteOfHour() < retryMin) {
                                 Alarm.set(context, true);
                             } else {
@@ -108,7 +115,8 @@ public class IndifferentReceiver extends BroadcastReceiver {
                 Response.ErrorListener responseErrorListener = new Response.ErrorListener() {
                     @Override
                     public void onErrorResponse(VolleyError volleyError) {
-                        Log.e(MainActivity.LOGTAG, "VolleyError", volleyError);
+                        //Log.e(MainActivity.LOGTAG, "VolleyError", volleyError);
+                        Helper.log(Log.ERROR, "VolleyError", volleyError);
                         Alarm.set(context, true);
                     }
                 };
@@ -119,19 +127,28 @@ public class IndifferentReceiver extends BroadcastReceiver {
     }
 
     private void requestImage(final Context context, final Meh meh) {
-        if (mNotificationManager == null) {
-            mNotificationManager = NotificationManagerCompat.from(context);
-        }
         Log.d(MainActivity.LOGTAG, "requestImage");
-        PicassoFutureTarget target = new PicassoFutureTarget(context, meh);
-        Picasso.with(context)
-                .load(meh.getDeal().getPhotos()[0])
-                .resize(500, 500)
-                .centerCrop()
-                .into(target);
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                Bitmap bitmap;
+                try {
+                    bitmap = Picasso.with(context)
+                            .load(meh.getDeal().getPhotos()[0])
+                            .resize(500, 500)
+                            .centerCrop()
+                            .get();
+                } catch (IOException e) {
+                    Helper.log(Log.ERROR, "requestImage", e);
+                    bitmap = BitmapFactory.decodeResource(context.getResources(), R.drawable.ic_error);
+                }
+                createNotification(context, meh, bitmap);
+            }
+        }).start();
     }
 
     private void createNotification(Context context, Meh meh, Bitmap bitmap) {
+        Helper.log(Log.DEBUG, "createNotification");
         if (mNotificationManager == null) {
             mNotificationManager = NotificationManagerCompat.from(context);
         }
@@ -148,10 +165,18 @@ public class IndifferentReceiver extends BroadcastReceiver {
         String summary = context.getString(R.string.notify_summary, meh.getDeal().getItems()[0].getCondition(), meh.getDeal().getPrices(context));
 
         int resId = R.drawable.ic_stat_meh;
-        String titleLower = title.toLowerCase();
-        if (titleLower.contains("speaker") && titleLower.contains("dock")) {
+        String titleLower = title.toLowerCase(Locale.US);
+        String[] sad_words = context.getResources().getStringArray(R.array.sad_words);
+        boolean foundSadWord = false;
+        for (String sad_word : sad_words) {
+            foundSadWord = titleLower.contains(sad_word);
+            if (!foundSadWord) {
+                break;
+            }
+        }
+        if (foundSadWord) {
             resId = R.drawable.ic_stat_sad;
-        } else if (titleLower.contains("fukubukuro")) {
+        } else if (titleLower.contains(context.getString(R.string.deal_fukubukuro).toLowerCase(Locale.US))) {
             resId = R.drawable.ic_stat_fuku;
         }
 
@@ -209,31 +234,5 @@ public class IndifferentReceiver extends BroadcastReceiver {
         }
 
         mNotificationManager.notify(NOTIFICATION_ID, builder.build());
-    }
-
-    private class PicassoFutureTarget implements Target {
-        private Context mContext;
-        private Meh mMeh;
-
-        public PicassoFutureTarget(Context context, Meh meh) {
-            mContext = context;
-            mMeh = meh;
-        }
-
-        @Override
-        public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
-            createNotification(mContext, mMeh, bitmap);
-        }
-
-        @Override
-        public void onBitmapFailed(Drawable errorDrawable) {
-            Bitmap bitmap = BitmapFactory.decodeResource(mContext.getResources(), R.drawable.ic_error);
-            createNotification(mContext, mMeh, bitmap);
-        }
-
-        @Override
-        public void onPrepareLoad(Drawable placeHolderDrawable) {
-            // do nothing
-        }
     }
 }
