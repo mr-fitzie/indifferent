@@ -30,7 +30,6 @@
             </intent>
         </com.synthtc.indifferent.preference.BroadcastPreference>
     </PreferenceCategory>
-    <!--
     <PreferenceCategory
         android:key="pref_cache"
         android:title="@string/pref_cache">
@@ -41,5 +40,4 @@
             android:summary="@string/pref_cache_summary"
             android:title="@string/pref_cache_title" />
     </PreferenceCategory>
-    -->
 </PreferenceScreen>

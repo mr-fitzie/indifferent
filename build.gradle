@@ -1,16 +1,16 @@
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
 ext.projBuildToolsVersion = "21.1.2"
 ext.projMinSdkVersion = 14
-ext.projTargetSdkVersion = 21
+ext.projTargetSdkVersion = 22
 ext.projVersionCode = 1
-ext.projVersionName = "0.5"
+ext.projVersionName = "0.6"
 
 buildscript {
     repositories {
         jcenter()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:1.0.0'
+        classpath 'com.android.tools.build:gradle:1.1.0'
 
         // NOTE: Do not place your application dependencies here; they belong
         // in the individual module build.gradle files

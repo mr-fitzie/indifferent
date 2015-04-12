@@ -1,23 +1,26 @@
 /**
  * Copyright 2015 SYNTHTC
-
- Licensed under the Apache License, Version 2.0 (the "License");
- you may not use this file except in compliance with the License.
- You may obtain a copy of the License at
-
- http://www.apache.org/licenses/LICENSE-2.0
-
- Unless required by applicable law or agreed to in writing, software
- distributed under the License is distributed on an "AS IS" BASIS,
- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- See the License for the specific language governing permissions and
- limitations under the License.
+ * <p/>
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * <p/>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p/>
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package com.synthtc.indifferent.ui;
 
 import android.app.Activity;
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.os.Bundle;
@@ -88,6 +91,7 @@ public class NavigationDrawerFragment extends Fragment {
     private boolean mFromSavedInstanceState;
     private boolean mUserLearnedDrawer;
     private List<Meh> mMehs = new ArrayList<>();
+    private NavigationReceiver mReceiver;
 
     public NavigationDrawerFragment() {
     }
@@ -108,6 +112,12 @@ public class NavigationDrawerFragment extends Fragment {
 
         // Select either the default item (0) or the last selected item.
         selectItem(mCurrentSelectedPosition);
+
+        // Create and register receiver to get updates for MehCache
+        mReceiver = new NavigationReceiver();
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(MehCache.INTENT_CACHE_UPDATED);
+        getActivity().registerReceiver(mReceiver, filter);
     }
 
     @Override
@@ -141,6 +151,12 @@ public class NavigationDrawerFragment extends Fragment {
         });
 
         return rootView;
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        getActivity().unregisterReceiver(mReceiver);
     }
 
     public boolean isDrawerOpen() {
@@ -194,8 +210,7 @@ public class NavigationDrawerFragment extends Fragment {
                     // The user manually opened the drawer; store this flag to prevent auto-showing
                     // the navigation drawer automatically in the future.
                     mUserLearnedDrawer = true;
-                    SharedPreferences sp = PreferenceManager
-                            .getDefaultSharedPreferences(getActivity());
+                    SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(getActivity());
                     sp.edit().putBoolean(PREF_USER_LEARNED_DRAWER, true).apply();
                 }
 
@@ -220,7 +235,7 @@ public class NavigationDrawerFragment extends Fragment {
         mDrawerLayout.setDrawerListener(mDrawerToggle);
     }
 
-    private void selectItem(int position) {
+    public void selectItem(int position) {
         mCurrentSelectedPosition = position;
         if (mDrawerListView != null) {
             mDrawerListView.setItemChecked(position, true);
@@ -314,6 +329,10 @@ public class NavigationDrawerFragment extends Fragment {
         }
     }
 
+    public int getCurrentPosition() {
+        return mCurrentSelectedPosition;
+    }
+
     /**
      * Callbacks interface that all activities using this fragment must implement.
      */
@@ -380,6 +399,16 @@ public class NavigationDrawerFragment extends Fragment {
             ImageView icon;
             TextView title;
             TextView date;
+        }
+    }
+
+    private class NavigationReceiver extends BroadcastReceiver {
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (MehCache.INTENT_CACHE_UPDATED.equals(intent.getAction())) {
+                updateList(true);
+            }
         }
     }
 }

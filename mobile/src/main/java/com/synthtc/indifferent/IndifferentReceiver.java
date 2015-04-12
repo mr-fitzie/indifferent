@@ -120,7 +120,7 @@ public class IndifferentReceiver extends BroadcastReceiver {
                         Alarm.set(context, true);
                     }
                 };
-                JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, url, null, responseListener, responseErrorListener);
+                JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, url, (String) null, responseListener, responseErrorListener);
                 VolleySingleton.getInstance(context.getApplicationContext()).addToRequestQueue(request);
             }
         }
@@ -135,6 +135,7 @@ public class IndifferentReceiver extends BroadcastReceiver {
                 try {
                     bitmap = Picasso.with(context)
                             .load(meh.getDeal().getPhotos()[0])
+                            .priority(Picasso.Priority.HIGH)
                             .resize(500, 500)
                             .centerCrop()
                             .get();
@@ -230,7 +231,7 @@ public class IndifferentReceiver extends BroadcastReceiver {
         if (resId == R.drawable.ic_stat_fuku) {
             builder.setColor(Color.RED);
         } else if (meh.getDeal().getTheme() != null && meh.getDeal().getTheme().getAccentColor() != null) {
-            builder.setColor(Color.parseColor(meh.getDeal().getTheme().getAccentColor()));
+            builder.setColor(Helper.getColor(meh.getDeal().getTheme().getAccentColor()));
         }
 
         mNotificationManager.notify(NOTIFICATION_ID, builder.build());

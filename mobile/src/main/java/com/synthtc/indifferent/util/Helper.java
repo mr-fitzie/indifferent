@@ -37,6 +37,23 @@ import java.io.IOException;
 public class Helper {
     public static DateTimeZone TIME_ZONE = DateTimeZone.forID("US/Eastern");
     private static String LOGTAG = MainActivity.LOGTAG + ".Helper";
+    private static Boolean mHasWritePermission = null;
+
+    public static int getColor(String hexColor) {
+        int color = Color.WHITE; // Default to white
+        if (hexColor != null) {
+            if (hexColor.length() == 4) { // #fff
+                char[] chars = hexColor.toCharArray();
+                hexColor = "" + chars[0] + chars[1] + chars[1] + chars[2] + chars[2] + chars[3] + chars[3];
+            }
+            try {
+                color = Color.parseColor(hexColor);
+            } catch (IllegalArgumentException e) {
+                Helper.log(Log.ERROR, "Could not parse color: " + hexColor, e);
+            }
+        }
+        return color;
+    }
 
     public static int getForegroundColor(Context context, int backgroundColor) {
         return getForegroundColor(context, backgroundColor,
@@ -118,7 +135,7 @@ public class Helper {
                 Log.wtf(LOGTAG, text, e);
         }
 
-        if (BuildConfig.DEBUG) {
+        if (BuildConfig.DEBUG && mHasWritePermission != null && mHasWritePermission) {
             File dump = new File(Environment.getExternalStorageDirectory() + File.separator + "indifferent-log.txt");
             try {
                 FileWriter writer = new FileWriter(dump, true);
@@ -133,5 +150,9 @@ public class Helper {
                 Log.e(LOGTAG, "Could not write log", ie);
             }
         }
+    }
+
+    public static void setHasWritePermission(boolean hasWritePermission) {
+        mHasWritePermission = hasWritePermission;
     }
 }

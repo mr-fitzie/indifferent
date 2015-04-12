@@ -1,23 +1,23 @@
 /**
  * Copyright 2015 SYNTHTC
-
- Licensed under the Apache License, Version 2.0 (the "License");
- you may not use this file except in compliance with the License.
- You may obtain a copy of the License at
-
- http://www.apache.org/licenses/LICENSE-2.0
-
- Unless required by applicable law or agreed to in writing, software
- distributed under the License is distributed on an "AS IS" BASIS,
- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- See the License for the specific language governing permissions and
- limitations under the License.
+ * <p/>
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * <p/>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p/>
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package com.synthtc.indifferent.util;
 
 import android.content.Context;
-import android.widget.BaseAdapter;
+import android.content.Intent;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
@@ -46,6 +46,7 @@ import java.util.List;
  * Created by Chris on 1/8/2015.
  */
 public class MehCache {
+    public static final String INTENT_CACHE_UPDATED = "com.synthtc.indifferent.CACHE_UPDATED";
     private static final String JSON_EXT = ".json";
     private static MehCache mInstance;
     private Context mContext;
@@ -57,6 +58,12 @@ public class MehCache {
         mContext = context;
     }
 
+    /**
+     * Get the Instance/Singleton for the cache
+     *
+     * @param context Context for instance
+     * @return {#MehCache} instance
+     */
     public static synchronized MehCache getInstance(Context context) {
         if (mInstance == null) {
             mInstance = new MehCache(context);
@@ -65,10 +72,26 @@ public class MehCache {
         return mInstance;
     }
 
+    /**
+     * Add an item to the cache
+     *
+     * @param instant    key for the item
+     * @param jsonObject JSON as {#Link JSONObject} for item
+     * @param overwrite  overwrite the item
+     * @return true if successful insert
+     */
     public boolean put(Instant instant, JSONObject jsonObject, boolean overwrite) {
         return put(instant, jsonObject.toString(), overwrite);
     }
 
+    /**
+     * Add an item to the cache
+     *
+     * @param instant   key for the item
+     * @param json      JSON in {#Link String} form for item
+     * @param overwrite overwrite the item
+     * @return true if successful insert
+     */
     public boolean put(Instant instant, String json, boolean overwrite) {
         boolean success = false;
         //Log.d(MainActivity.LOGTAG, "put " + instant + " " + overwrite);
@@ -89,10 +112,23 @@ public class MehCache {
         return success;
     }
 
+    /**
+     * Return the {#Link Instant} for the provided {#Link Meh}
+     *
+     * @param meh {#Link Meh}
+     * @return {#Link Instant}
+     */
     public Instant getInstant(Meh meh) {
         return getInstant(meh, Minutes.ONE);
     }
 
+    /**
+     * Return the {#Link Instant} for the provided {#Link Meh}
+     *
+     * @param meh           {#Link Meh}
+     * @param minutesWithin item can be +/- these minutes
+     * @return {#Link Instant}
+     */
     public Instant getInstant(Meh meh, Minutes minutesWithin) {
         String createdAt = null;
         if (meh.getDeal() != null && meh.getDeal().getTopic() != null) {
@@ -110,7 +146,7 @@ public class MehCache {
             DateTime createdTime = DateTime.parse(createdAt);
             DateTime ideal = new DateTime(Helper.TIME_ZONE)
                     .withDate(createdTime.getYear(), createdTime.getMonthOfYear(), createdTime.getDayOfMonth())
-                    .withTime(0,0,0,0)
+                    .withTime(0, 0, 0, 0)
                     .withTimeAtStartOfDay();
             if (minutesWithin != null && Minutes.minutesBetween(createdTime.toInstant(), ideal).isLessThan(minutesWithin)) {
                 instant = ideal.toInstant();
@@ -121,6 +157,12 @@ public class MehCache {
         return instant;
     }
 
+    /**
+     * Retrieve a item from the cache
+     *
+     * @param instant {#Link Instant} key for item
+     * @return {#Link Meh}
+     */
     public Meh get(Instant instant) {
         Meh meh = null;
         if (mCache.containsKey(instant)) {
@@ -162,6 +204,11 @@ public class MehCache {
         return meh;
     }
 
+    /**
+     * Returns all {#Link Meh} in the cache
+     *
+     * @return
+     */
     public List<Meh> getAll() {
         List<Instant> mehKeys = new ArrayList<>(mCache.keySet());
 
@@ -178,13 +225,21 @@ public class MehCache {
         return mehValues;
     }
 
+    /**
+     * Clears the cache with the exception of the current day
+     */
     public void clear() {
+        Instant instant = DateTime.now(Helper.TIME_ZONE).withTimeAtStartOfDay().toInstant();
+        String todayFile = instant.toString(mFormatter) + JSON_EXT;
         String[] list = mContext.fileList();
         for (String file : list) {
-            if (file.endsWith(JSON_EXT)) {
+            if (file.endsWith(JSON_EXT) && !file.equals(todayFile)) {
                 mContext.deleteFile(file);
             }
         }
         mCache.clear();
+        // Reload the current file
+        get(instant);
+        mContext.sendBroadcast(new Intent(INTENT_CACHE_UPDATED));
     }
 }
