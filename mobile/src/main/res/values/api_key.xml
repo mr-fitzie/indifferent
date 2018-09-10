@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- https://meh.com/forum/topics/meh-api -->
+<resources>
+    <string name="api_url">https://api.meh.com/1/current.json?apikey=%1$s</string>
+    <string name="api_key"><!--- insert-your-own-api-key --></string>
+</resources>
